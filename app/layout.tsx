@@ -45,6 +45,9 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: "ScholarMatch",
+  alternates: {
+    canonical: "/",
+  },
   keywords: [
     "scholarships",
     "scholarship matching",
