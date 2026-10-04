@@ -29,6 +29,9 @@ import type {
   LanguageTest,
 } from "@/types/scholarship";
 
+/** Ties the mobile trigger to the sheet it opens. */
+const SHEET_ID = "scholarmatch-filter-sheet";
+
 interface FilterPanelProps {
   query: ExplorerQuery;
   onChange: (next: ExplorerQuery) => void;
@@ -200,6 +203,8 @@ function FilterBody({
 export function FilterPanel({ query, onChange, fields, countries }: FilterPanelProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   const activeCount = countActiveFilters(query);
   const clear = useCallback(
@@ -226,8 +231,46 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
   useEffect(() => {
     if (!open) return;
 
+    /* Move focus into the sheet. Without this, `aria-modal` is a lie: focus
+       would still sit on the trigger behind the overlay, so the next Tab would
+       walk the page underneath instead of the filters. */
+    const raf = requestAnimationFrame(() => closeRef.current?.focus());
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
+
+      /* Focus trap. `aria-modal="true"` promises the rest of the page is
+         unreachable, so Tab has to cycle within the sheet to honour it. */
+      if (event.key !== "Tab") return;
+
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+
+      const focusable = [
+        ...sheet.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.offsetParent !== null || el === document.activeElement);
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || !sheet.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     // Compensate for the scrollbar so the page does not shift on open.
@@ -240,6 +283,7 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
     document.addEventListener("keydown", onKeyDown);
 
     return () => {
+      cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPadding;
@@ -284,6 +328,7 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-haspopup="dialog"
+          aria-controls={SHEET_ID}
           className="w-full"
         >
           <SlidersHorizontal className="size-4" aria-hidden="true" />
@@ -313,6 +358,8 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
         />
 
         <div
+          id={SHEET_ID}
+          ref={sheetRef}
           role="dialog"
           aria-modal="true"
           aria-label="Filter scholarships"
@@ -322,6 +369,8 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
             "transition-transform duration-[380ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
             open ? "translate-y-0" : "translate-y-full",
           )}
+          /* Off-screen when closed, so it must not be reachable by Tab. */
+          {...(open ? {} : { inert: true })}
         >
           {/* Grab handle doubles as the drag affordance cue. */}
           <div className="flex shrink-0 justify-center pt-3">
@@ -335,6 +384,7 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
             </h2>
             <button
               type="button"
+              ref={closeRef}
               onClick={close}
               aria-label="Close filters"
               className="grid size-8 place-items-center rounded-full text-mist-400 transition-colors duration-200 hover:bg-white/[0.08] hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
