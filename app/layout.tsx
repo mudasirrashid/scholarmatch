@@ -31,7 +31,7 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-const SITE_URL = "https://scholarmatch.vercel.app";
+const SITE_URL = "https://www.scholarmatch.me";
 
 const TITLE = "ScholarMatch — Find Scholarships That Match You";
 const DESCRIPTION =

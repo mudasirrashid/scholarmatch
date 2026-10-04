@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://scholarmatch.vercel.app";
+const SITE_URL = "https://www.scholarmatch.me";
 
 /**
  * Only the homepage exists in Phase 01. Additional product routes should be
