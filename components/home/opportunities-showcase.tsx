@@ -44,6 +44,7 @@ export function OpportunitiesShowcase() {
               key={scholarship.id}
               scholarship={scholarship}
               priority={index === 0}
+              showSave={false}
             />
           ))}
         </RevealGroup>

@@ -57,8 +57,12 @@ export interface ScholarshipPreview {
   countryCode: string;
   degree: DegreeLevel;
   degreeLabel: string;
+  /** Academic fields the award is open to. Empty means unrestricted. */
+  fields: readonly string[];
   funding: FundingType;
   fundingLabel: string;
+  /** Exact closing date as an ISO `YYYY-MM-DD` string, for the visible date. */
+  deadline: string;
   /** Whole days remaining until the closing date. Demo-only in Phase 01. */
   deadlineInDays: number;
   /** Overall fit score, 0 to 100. */
@@ -109,4 +113,254 @@ export interface JourneyStage {
   id: JourneyStageId;
   label: string;
   description: string;
+}
+
+/* ==========================================================================
+   Phase 02  Explorer and detail experience
+   --------------------------------------------------------------------------
+   Everything below is additive. The `ScholarshipPreview` shape above stays
+   exactly as Phase 01 consumes it, and `toPreview` in `lib/scholarships`
+   projects a full record down to it, so the explorer and the detail page can
+   share one source of truth without Phase 01 changing behaviour.
+   ========================================================================== */
+
+/** Degree levels offered as explorer filters. */
+export type DegreeFilter = "bachelors" | "masters" | "doctorate";
+
+/** Academic standing floor, expressed as a GPA on a 4.0 scale. */
+export type GpaRequirement = 0 | 2.5 | 3 | 3.5 | 3.7;
+
+/** Proficiency tests a provider accepts as evidence of language ability. */
+export type LanguageTest = "ielts" | "toefl" | "duolingo";
+
+/**
+ * A language filter member.
+ *
+ * `"none"` is a real selection rather than a sentinel: students often want
+ * opportunities that list no test requirement, which is why it is part of the
+ * filter union and survives a URL round trip.
+ */
+export type LanguageFilter = LanguageTest | "none";
+
+/** How the award is paid out. Ordered from most to least comprehensive. */
+export type FundingTier =
+  | "fully_funded"
+  | "tuition_and_partial"
+  | "tuition_coverage"
+  | "partial"
+  | "stipend"
+  | "research_funding";
+
+/** Deadline proximity buckets, evaluated against a fixed reference date. */
+export type DeadlineWindow = "closing_soon" | "this_month" | "next_three_months" | "later";
+
+/** Sort orders offered on the explorer. */
+export type SortKey = "best_match" | "deadline_soon" | "newest" | "fully_funded" | "relevant";
+
+/**
+ * Outcome of comparing one requirement against one student.
+ *
+ * The matching engine of Phase 03/04 will produce these. Phase 02 ships them
+ * as authored demo values so the vocabulary is settled before any real
+ * evaluation logic exists.
+ */
+export type EligibilityStatus =
+  | "strong_match"
+  | "meets"
+  | "review"
+  | "not_specified"
+  | "not_eligible";
+
+/** One evaluated dimension of fit, rendered in the "Why this matches" panel. */
+export interface MatchBreakdownItem {
+  id: string;
+  /** Dimension name, e.g. "Academic". */
+  label: string;
+  /** Short verdict, e.g. "Excellent" or "Exact match". */
+  verdict: string;
+  status: EligibilityStatus;
+  /** Optional line explaining the verdict for the student. */
+  detail?: string;
+}
+
+/**
+ * Everything the real matching engine will eventually hand the UI.
+ *
+ * Grouped deliberately so Phase 03 can populate a single object without the
+ * presentation layer changing.
+ */
+export interface MatchInsights {
+  /** Overall fit, 0 to 100. */
+  score: number;
+  /** One-line read on the score, shown beneath the ring. */
+  summary: string;
+  breakdown: readonly MatchBreakdownItem[];
+  /** Dimensions where the student is short of the requirement. */
+  missingRequirements: readonly string[];
+  /** Dimensions that make this opportunity stand out. */
+  strengths: readonly string[];
+  /** Cautions worth reviewing before applying. */
+  warnings: readonly string[];
+}
+
+/** A single money or in-kind component of an award. */
+export interface FundingBenefit {
+  id: string;
+  label: string;
+  /** Amount as written by the provider, e.g. "€1,200 / month". */
+  value: string;
+  /** One line on what it covers or any condition attached. */
+  note?: string;
+}
+
+/** Whether a document must be supplied to apply. */
+export type DocumentRequirement = "required" | "optional" | "conditional";
+
+/** A document the provider asks for. */
+export interface RequiredDocument {
+  id: string;
+  label: string;
+  requirement: DocumentRequirement;
+  /** Practical guidance, e.g. "Certified copy, not a scan of an original". */
+  note?: string;
+}
+
+/** A named requirement block shown in "Who can apply". */
+export interface EligibilityCriterion {
+  id: string;
+  /** Dimension name, e.g. "Nationality". */
+  label: string;
+  /** The requirement as the provider states it. */
+  value: string;
+  /** Whether the demo profile appears to satisfy it. */
+  status: EligibilityStatus;
+  /** Optional remediation hint shown when `status` is `review`. */
+  detail?: string;
+}
+
+/** A step the student performs on the official provider's own portal. */
+export interface HowToApplyStep {
+  /** Two-digit display index, e.g. "01". */
+  index: string;
+  title: string;
+  description: string;
+  /** A caution that commonly causes applications to fail. */
+  caution?: string;
+}
+
+/** A stage in the ScholarMatch-side application journey. */
+export interface ApplicationStage {
+  index: string;
+  title: string;
+  description: string;
+}
+
+/** A mistake that causes applications to be rejected. */
+export interface CommonMistake {
+  id: string;
+  title: string;
+  /** What goes wrong, and what to do instead. */
+  consequence: string;
+}
+
+/**
+ * Provenance of an opportunity.
+ *
+ * Phase 02 only ever marks records as demo data, and never presents an
+ * unverified external URL as authoritative.
+ */
+export interface OfficialSource {
+  /** Display name of the awarding body. */
+  provider: string;
+  /**
+   * Set only when a genuine, verified provider URL exists. Demo records leave
+   * this undefined so the UI can decline to render a fabricated link.
+   */
+  verifiedUrl?: string;
+  /** Whether this record is illustrative rather than sourced. */
+  isDemo: true;
+}
+
+/**
+ * Full scholarship record.
+ *
+ * This is the shape a real scholarship database will map into. Nested objects
+ * are always present (never optional) so detail sections can render without
+ * defensive checks; absence is expressed as an empty array or an explicit
+ * `undefined` on the source, not as a missing branch.
+ */
+export interface Scholarship {
+  id: string;
+  title: string;
+  organization: string;
+  city: string;
+  country: string;
+  /** ISO 3166-1 alpha-2, used for the region affordance. */
+  countryCode: string;
+
+  /** Degree levels the award is open to. */
+  degreeLevels: readonly DegreeLevel[];
+  /** Primary degree this listing is filed under. */
+  degree: DegreeLevel;
+  degreeLabel: string;
+
+  /** Study fields the award covers. */
+  fields: readonly string[];
+
+  funding: FundingTier;
+  fundingLabel: string;
+  /** Human summary of the financial package. */
+  fundingSummary: string;
+  benefits: readonly FundingBenefit[];
+
+  /** ISO date the applications close. */
+  deadline: string;
+  /** ISO date the award was first published, used by the "Newest" sort. */
+  postedAt: string;
+
+  gpa: GpaRequirement;
+  /** Rendered eligibility floor, e.g. "3.5+ GPA". */
+  gpaLabel: string;
+
+  nationality: string;
+  languageTests: readonly LanguageTest[];
+  /** Fields that accept a waiver in place of a language test. */
+  languageNote?: string;
+
+  eligibility: readonly EligibilityCriterion[];
+  documents: readonly RequiredDocument[];
+  howToApply: readonly HowToApplyStep[];
+  journey: readonly ApplicationStage[];
+  commonMistakes: readonly CommonMistake[];
+  tags: readonly string[];
+
+  studyMode: string;
+  duration: string;
+  applicationFee: string;
+
+  match: MatchInsights;
+
+  officialSource: OfficialSource;
+}
+
+/** Aggregated facet counts, used to label filter groups with totals. */
+export type FacetCounts = Readonly<Record<string, number>>;
+
+/**
+ * Explorer query state.
+ *
+ * Mirrors the URL search params one-to-one so any view of the explorer is
+ * shareable and survives a refresh without extra client state.
+ */
+export interface ExplorerQuery {
+  /** Free-text term matched against title, provider, country and field. */
+  q: string;
+  degree: readonly DegreeFilter[];
+  fields: readonly string[];
+  countries: readonly string[];
+  funding: readonly FundingTier[];
+  deadlines: readonly DeadlineWindow[];
+  gpa: readonly GpaRequirement[];
+  language: readonly LanguageFilter[];
+  sort: SortKey;
 }

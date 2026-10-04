@@ -1,25 +1,30 @@
 import { ArrowUpRight, CircleCheck, Clock, MapPin } from "lucide-react";
+import Link from "next/link";
 
+import { SaveButton } from "@/components/scholarships/save-button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
-import { formatDeadline, isUrgent, matchTone } from "@/lib/format";
+import { formatDeadline, formatExactDate, isUrgent, matchTone } from "@/lib/format";
 import type { ScholarshipPreview } from "@/types/scholarship";
 
 /**
- * Reusable opportunity card.
+ * Core opportunity card.
  *
  * Intentionally a server component: cards appear many times on discovery
- * surfaces, so they carry no client JavaScript and animate entirely through
- * CSS on hover and focus-within.
+ * surfaces, so the card itself ships no JavaScript and animates entirely
+ * through CSS on hover and focus-within. The only interactive element is the
+ * save button, which is a separate client island.
  *
- * `href` is optional. Until real routes exist, omitting it renders the card as
- * a non-interactive preview rather than linking somewhere that would 404.
+ * `href` is optional. Omitting it renders a non-interactive preview rather than
+ * linking somewhere that would 404 — this is how the Phase 01 showcase uses it.
  */
 export function ScholarshipCard({
   scholarship,
   href,
   className,
   priority,
+  /** Hides the save control on surfaces where saving has no affordance. */
+  showSave = true,
 }: {
   scholarship: ScholarshipPreview;
   /** Destination for the primary action. Omit for a static preview card. */
@@ -27,18 +32,22 @@ export function ScholarshipCard({
   className?: string;
   /** Raises the first card to match the visual weight of the layout. */
   priority?: boolean;
+  showSave?: boolean;
 }) {
   const {
-    id,
-    title,
-    organization,
-    country,
-    matchScore,
-    degreeLabel,
-    fundingLabel,
-    deadlineInDays,
-    tags,
-  } = scholarship;
+  id,
+  title,
+  organization,
+  country,
+  matchScore,
+  degreeLabel,
+  fields,
+  fundingLabel,
+  deadline,
+  deadlineInDays,
+  tags,
+} =
+    scholarship;
 
   const tone = matchTone(matchScore);
   const urgent = isUrgent(deadlineInDays);
@@ -87,7 +96,16 @@ export function ScholarshipCard({
                 priority ? "text-xl" : "text-lg",
               )}
             >
-              {title}
+              {href ? (
+                <Link
+                  href={href}
+                  className="transition-colors duration-200 after:absolute after:inset-0 after:content-[''] hover:text-white focus-visible:outline-none"
+                >
+                  {title}
+                </Link>
+              ) : (
+                title
+              )}
             </h3>
 
             <p className="mt-1.5 text-xs text-mist-500">{country}</p>
@@ -131,7 +149,7 @@ export function ScholarshipCard({
         </div>
 
         {/* Attributes */}
-        <div className="mt-5 flex flex-wrap gap-1.5">
+        <div className="mt-5 flex flex-wrap items-center gap-1.5">
           <Badge
             tone={scholarship.funding === "fully_funded" ? "positive" : "neutral"}
             icon={<CircleCheck className="size-3" aria-hidden="true" />}
@@ -140,6 +158,12 @@ export function ScholarshipCard({
           </Badge>
           <Badge>{degreeLabel}</Badge>
         </div>
+
+        {fields.length > 0 ? (
+          <p className="mt-3 line-clamp-1 text-[0.8125rem] text-mist-400">
+            <span className="text-mist-600">Field</span> {fields.join(" · ")}
+          </p>
+        ) : null}
 
         {tags.length > 0 ? (
           <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
@@ -158,7 +182,7 @@ export function ScholarshipCard({
         <div className="mt-auto pt-6">
           <div className="rule-fade" />
 
-          <div className="mt-4 flex items-center justify-between gap-4">
+          <div className="mt-4 flex items-center justify-between gap-3">
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 text-sm",
@@ -166,40 +190,39 @@ export function ScholarshipCard({
               )}
             >
               <Clock className="size-3.5 shrink-0" aria-hidden="true" />
-              {formatDeadline(deadlineInDays)}
+              {/* Relative urgency first, then the exact date, so the day is
+                  never hidden behind a rounded "3 months left". */}
+              <span>{formatDeadline(deadlineInDays)}</span>
+              <span className="text-mist-600">·</span>
+              <time dateTime={deadline} className="text-mist-500">
+                {formatExactDate(deadline)}
+              </time>
             </span>
 
-            {href ? (
-              <a
-                href={href}
-                aria-label={`View ${title}`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 hover:text-white"
-              >
-                View Opportunity
-                <ArrowUpRight
-                  className="size-3.5 transition-transform duration-[320ms] ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  aria-hidden="true"
-                />
-              </a>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-mist-500">
-                Preview only
-                <ArrowUpRight className="size-3.5 opacity-50" aria-hidden="true" />
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {href ? (
+                <span className="pointer-events-none inline-flex items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 group-hover:text-white">
+                  View Scholarship
+                  <ArrowUpRight
+                    className="size-3.5 transition-transform duration-[320ms] ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    aria-hidden="true"
+                  />
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-mist-500">
+                  Preview only
+                  <ArrowUpRight className="size-3.5 opacity-50" aria-hidden="true" />
+                </span>
+              )}
+
+              {/* Lifted above the title's stretched hit area so it stays clickable. */}
+              {showSave ? (
+                <SaveButton id={id} title={title} className="relative z-10" />
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Whole-card affordance, only when the card is actually navigable. */}
-      {href ? (
-        <a
-          href={href}
-          tabIndex={-1}
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 rounded-3xl"
-        />
-      ) : null}
 
       <span className="sr-only">{`Opportunity identifier ${id}`}</span>
     </article>

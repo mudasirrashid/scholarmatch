@@ -52,7 +52,16 @@ export interface ButtonProps {
   disabled?: boolean;
   /** Accessible label when the visible content is not descriptive. */
   "aria-label"?: string;
+  /** Accessible expanded state, for components that open a panel. */
+  "aria-expanded"?: boolean;
+  "aria-haspopup"?: boolean | "dialog" | "menu" | "listbox";
+  "aria-controls"?: string;
   onClick?: () => void;
+  /**
+   * Forwarded so callers can move focus deliberately, which the mobile filter
+   * sheet relies on to restore focus to its trigger.
+   */
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 export function Button({
@@ -64,6 +73,7 @@ export function Button({
   type = "button",
   disabled,
   onClick,
+  ref,
   ...rest
 }: ButtonProps) {
   const classes = cn(BASE, VARIANTS[variant], SIZES[size], className);
@@ -78,6 +88,7 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       type={type}
       className={classes}
       disabled={disabled}
