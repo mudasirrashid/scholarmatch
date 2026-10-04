@@ -131,9 +131,72 @@ check(
   false,
 );
 
-/* Detail routes do not exist yet, so they must 404 rather than crash. */
-const missing = await get("/scholarships/demo-clinical-research");
-check("detail route is not implemented yet", missing.status, 404);
+/* Detail routes. */
+const detail = await get("/scholarships/demo-clinical-research");
+check("detail route returns 200", detail.status, 200);
+check("detail shows the record title", detail.html.includes("Clinical Research Fellowship"), true);
+check("detail shows the awarding body", detail.html.includes("Illustrative Health Sciences Centre"), true);
+check("detail shows the exact deadline", detail.html.includes("10 Dec 2026"), true);
+check("detail has a canonical url", detail.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/scholarships/demo-clinical-research"'), true);
+
+/* Every section the sticky nav links to must exist as a real anchor target. */
+const SECTION_IDS = [
+  "overview", "match", "eligibility", "funding",
+  "documents", "how-to-apply", "journey", "mistakes", "source",
+];
+for (const id of SECTION_IDS) {
+  check(`detail has section #${id}`, detail.html.includes(`id="${id}"`), true);
+  check(`detail nav links to #${id}`, detail.html.includes(`href="#${id}"`), true);
+}
+
+/* Sections must be labelled landmarks for screen reader navigation. */
+check(
+  "sections are labelled regions",
+  SECTION_IDS.every((id) => detail.html.includes(`aria-labelledby="${id}-heading"`)),
+  true,
+);
+
+/* Demo provenance must stay explicit and no invented provider link may render. */
+check("detail states the data is illustrative", detail.html.includes("illustrative sample content"), true);
+check("detail renders no verified external link", detail.html.includes("Official page"), false);
+check("detail has no verifiedUrl in markup", detail.html.includes("verifiedUrl"), false);
+
+/* The test-free record must not still advertise a required test. */
+check("test-free record reports no test required", detail.html.includes("No language test required"), true);
+
+/* An unknown id must 404 rather than render an empty page. */
+const missingDetail = await get("/scholarships/does-not-exist");
+check("unknown detail id returns 404", missingDetail.status, 404);
+
+/* Header section anchors must resolve to the homepage away from the homepage. */
+check(
+  "header rewrites section anchors off the homepage",
+  detail.html.includes('href="/#discover"'),
+  true,
+);
+check(
+  "header points conversion action at the explorer off the homepage",
+  detail.html.includes('href="/scholarships"'),
+  true,
+);
+
+/* Sitemap must list the explorer and every detail route. */
+const sitemap = await get("/sitemap.xml");
+check("sitemap returns 200", sitemap.status, 200);
+check("sitemap lists the homepage", sitemap.html.includes("<loc>https://www.scholarmatch.me</loc>"), true);
+check("sitemap lists the explorer", sitemap.html.includes("<loc>https://www.scholarmatch.me/scholarships</loc>"), true);
+check(
+  "sitemap lists all 12 detail urls",
+  (sitemap.html.match(/\/scholarships\/demo-/g) ?? []).length,
+  12,
+);
+
+/* Homepage conversion action now leads somewhere real. */
+check(
+  "homepage CTA links to the explorer",
+  home.html.includes('href="/scholarships"'),
+  true,
+);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

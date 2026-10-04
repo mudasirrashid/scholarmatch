@@ -8,9 +8,9 @@ import { Container } from "@/components/ui/container";
 /**
  * Closing conversion section.
  *
- * Phase 01 has no accounts or onboarding, so the actions resolve to a
- * transparent "not yet available" state rather than a dead link. They become
- * real destinations once authentication lands.
+ * Accounts do not exist yet, so the primary action resolves to a transparent
+ * "not yet available" state rather than a dead link. The secondary action is
+ * real: it leads to the scholarship explorer.
  */
 export function FinalCta() {
   return (
@@ -46,8 +46,8 @@ export function FinalCta() {
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
 
-              <Button href="#discover" variant="secondary" size="lg">
-                Review the preview
+              <Button href="/scholarships" variant="secondary" size="lg">
+                Browse opportunities
               </Button>
             </div>
           </Reveal>

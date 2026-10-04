@@ -2,6 +2,7 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Brand } from "@/components/layout/brand";
@@ -12,6 +13,7 @@ import { useScrolled } from "@/lib/motion";
 
 interface NavItem {
   label: string;
+  /** Homepage section id, resolved to a full path when not on the homepage. */
   href: string;
 }
 
@@ -26,6 +28,19 @@ const NAV_ITEMS: readonly NavItem[] = [
 export function SiteHeader() {
   const scrolled = useScrolled(16);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  /*
+   * The nav points at homepage sections. On any other route a bare `#id` would
+   * resolve against the current page and land nowhere, so the section links are
+   * rewritten to `/#id`. Rendered on the server from the pathname rather than
+   * after hydration, so the correct link is in the initial HTML.
+   */
+  const onHomepage = pathname === "/";
+  const navHref = (href: string) => (onHomepage ? href : `/${href}`);
+
+  /* Conversion actions point at the explorer now that it exists. */
+  const primaryHref = onHomepage ? "#final-cta" : "/scholarships";
 
   // Close the mobile sheet when the viewport grows past the breakpoint,
   // otherwise it stays mounted and traps focus behind the header.
@@ -90,7 +105,7 @@ export function SiteHeader() {
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
+                    href={navHref(item.href)}
                     className="relative inline-flex h-9 items-center rounded-full px-3.5 text-sm text-mist-400 transition-colors duration-200 hover:text-mist-50"
                   >
                     {item.label}
@@ -102,13 +117,14 @@ export function SiteHeader() {
 
           <div className="hidden items-center gap-2.5 lg:flex">
             {/*
-              Authentication does not exist in Phase 01. Both actions target
-              the on-page conversion section rather than non-existent routes.
+              Authentication does not exist yet, so "Sign In" still targets the
+              conversion section. "Get Started" points at the explorer on routes
+              that have no conversion section of their own.
             */}
-            <Button href="#final-cta" variant="ghost" size="sm">
+            <Button href={onHomepage ? "#final-cta" : "/scholarships"} variant="ghost" size="sm">
               Sign In
             </Button>
-            <Button href="#final-cta" variant="secondary" size="sm">
+            <Button href={primaryHref} variant="secondary" size="sm">
               Get Started
             </Button>
           </div>
@@ -143,7 +159,7 @@ export function SiteHeader() {
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
+                    href={navHref(item.href)}
                     onClick={() => setMenuOpen(false)}
                     className="block border-b border-hairline-soft py-3.5 text-base text-mist-200 transition-colors duration-200 hover:text-mist-50"
                   >
@@ -154,10 +170,14 @@ export function SiteHeader() {
             </ul>
 
             <div className="flex flex-col gap-2.5 pt-5 pb-2">
-              <Button href="#final-cta" variant="secondary" size="md">
+              <Button
+                href={onHomepage ? "#final-cta" : "/scholarships"}
+                variant="secondary"
+                size="md"
+              >
                 Sign In
               </Button>
-              <Button href="#final-cta" variant="primary" size="md">
+              <Button href={primaryHref} variant="primary" size="md">
                 Get Started
               </Button>
             </div>
