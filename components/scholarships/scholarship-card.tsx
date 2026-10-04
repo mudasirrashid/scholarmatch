@@ -182,42 +182,50 @@ export function ScholarshipCard({
         <div className="mt-auto pt-6">
           <div className="rule-fade" />
 
-          <div className="mt-4 flex items-center justify-between gap-3">
+          {/*
+            Two rows rather than one. On a three-column grid the card's content
+            box is only ~225px wide, and the deadline, the call to action and the
+            save control together need closer to 270px. A single `justify-between`
+            row therefore pushed the action and the save button past the padding,
+            where `overflow-hidden` clipped them. Stacking keeps every piece of
+            data inside the card at every column width.
+          */}
+          <div className="mt-4 flex flex-col gap-3">
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 text-sm",
+                "flex min-w-0 items-center gap-1.5 text-sm",
                 urgent ? "text-amber-300" : "text-mist-300",
               )}
             >
               <Clock className="size-3.5 shrink-0" aria-hidden="true" />
               {/* Relative urgency first, then the exact date, so the day is
                   never hidden behind a rounded "3 months left". */}
-              <span>{formatDeadline(deadlineInDays)}</span>
-              <span className="text-mist-600">·</span>
-              <time dateTime={deadline} className="text-mist-500">
+              <span className="shrink-0">{formatDeadline(deadlineInDays)}</span>
+              <span className="shrink-0 text-mist-600">·</span>
+              <time dateTime={deadline} className="min-w-0 truncate text-mist-500">
                 {formatExactDate(deadline)}
               </time>
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-3">
               {href ? (
-                <span className="pointer-events-none inline-flex items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 group-hover:text-white">
-                  View Scholarship
+                <span className="pointer-events-none inline-flex min-w-0 items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 group-hover:text-white">
+                  <span className="truncate">View Scholarship</span>
                   <ArrowUpRight
-                    className="size-3.5 transition-transform duration-[320ms] ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    className="size-3.5 shrink-0 transition-transform duration-[320ms] ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                     aria-hidden="true"
                   />
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-mist-500">
-                  Preview only
-                  <ArrowUpRight className="size-3.5 opacity-50" aria-hidden="true" />
+                <span className="inline-flex min-w-0 items-center gap-1 text-sm font-medium text-mist-500">
+                  <span className="truncate">Preview only</span>
+                  <ArrowUpRight className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
                 </span>
               )}
 
               {/* Lifted above the title's stretched hit area so it stays clickable. */}
               {showSave ? (
-                <SaveButton id={id} title={title} className="relative z-10" />
+                <SaveButton id={id} title={title} className="relative z-10 shrink-0" />
               ) : null}
             </div>
           </div>
