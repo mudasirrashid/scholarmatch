@@ -29,10 +29,16 @@ export function MatchRing({
   const clamped = Math.max(0, Math.min(100, score));
 
   const dimensions = {
-    sm: { box: "size-16", text: "text-lg", inner: "inset-[3px]" },
+    sm: { box: "size-16", text: "text-xl", inner: "inset-[3px]" },
     md: { box: "size-24", text: "text-2xl", inner: "inset-[4px]" },
     lg: { box: "size-36", text: "text-4xl", inner: "inset-[5px]" },
   }[size];
+
+  /* A 64px ring cannot hold a number, a percent sign and a tracked-out
+     uppercase label without the three of them crowding each other. The
+     compact ring therefore shows the bare figure; the accessible name on
+     the parent still carries "label: N percent" for assistive tech. */
+  const showCaption = size !== "sm";
 
   return (
     <div
@@ -68,9 +74,13 @@ export function MatchRing({
           )}
         >
           <CountUp value={clamped} />
-          <span className="text-[0.5em] align-super text-mist-400">%</span>
+          {showCaption ? (
+            <span className="text-[0.5em] align-super text-mist-400">%</span>
+          ) : null}
         </span>
-        <span className="label-micro mt-2 text-mist-500">{label}</span>
+        {showCaption ? (
+          <span className="label-micro mt-2 text-mist-500">{label}</span>
+        ) : null}
       </div>
     </div>
   );
