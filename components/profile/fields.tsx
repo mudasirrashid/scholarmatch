@@ -196,7 +196,7 @@ export function DraftField({
   hint?: string;
   /** The stored value, already rendered for display. */
   committed: string;
-  /** Receives every keystroke that `isValid` accepts, clearing included. */
+  /** Receives the value once, when the student leaves the field, clearing included. */
   onCommit: (value: string) => void;
   isValid: (raw: string) => boolean;
   /** Shown under the field while a rejected keystroke is in it. */
@@ -233,17 +233,21 @@ export function DraftField({
             setIsEditing(true);
           }}
           onChange={(event) => {
-            const next = event.target.value;
-            setDraft(next);
-
-            if (isValid(next)) onCommit(next);
+            setDraft(event.target.value);
           }}
           onBlur={() => {
-            // A valid entry settles onto the normalised stored value. An invalid
-            // one keeps the student's text and its error, because discarding
-            // something they typed without a word is the behaviour this component
-            // was written to remove.
-            if (isValid(draft)) setIsEditing(false);
+            // Commit once, on the way out, and only if the whole entry is
+            // acceptable. Committing per keystroke persisted whichever valid
+            // prefix happened to precede the mistake: typing 9.5 into a 0-9 band
+            // stored a 9, so the rejection banner was describing a value the
+            // profile already held and the engine already scored, and it had
+            // overwritten a real score with it. One commit per visit leaves an
+            // invalid entry as the student's text plus its error, which is what
+            // this component was written to do.
+            if (!isValid(draft)) return;
+
+            if (draft !== committed) onCommit(draft);
+            setIsEditing(false);
           }}
           className={INPUT_CLASSES}
         />
