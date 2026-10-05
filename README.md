@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ScholarMatch
 
-## Getting Started
+Scholarship discovery with an explainable matching engine. Every score in the
+product is produced by one deterministic function, and the inputs that produced
+it are shown to the user.
 
-First, run the development server:
+Live at [scholarmatch.me](https://www.scholarmatch.me).
+
+## What it does
+
+A student builds a profile, and each scholarship is scored against it across six
+dimensions. Three are **hard** — academic, degree and eligibility — because a
+provider will not waive them. Three are **soft** — field, experience and
+preferences — because they shape whether applying is worthwhile rather than
+whether it is permitted.
+
+```
+academic      30%   hard
+field         25%   soft
+degree        15%   hard
+eligibility   15%   hard
+experience     5%   soft
+preferences   10%   soft
+```
+
+A hard failure caps the score at 45 and names the requirement that failed, so an
+ineligible option can never outrank an eligible one or read as a good match.
+
+## Design rules
+
+**Unknown is not the same as none.** This is the most important rule in
+`types/student.ts`. An omitted property means "we do not know"; an explicit
+empty value means "known to be none". A blank GPA is never treated as a failing
+one, and `workExperienceYears: 0` is a real answer rather than missing data.
+Unknown dimensions are excluded from the weighted total and reported in
+`missingInformation` instead of being guessed at.
+
+**Incomplete profiles are damped.** Re-weighting over known dimensions stops a
+partial profile being punished twice for being partial. Taken alone it would let
+a near-empty profile post a flattering score, so the result is also multiplied by
+a confidence factor reflecting how much of the profile actually contributed.
+
+**Scores come from structure, not prose.** Eligibility reads structured fields —
+`languageRequirements`, `eligibleCountries`, `degreeLevels` — rather than parsing
+the human-readable requirement text. That prose was written for display, and
+adjectival forms like "Nigerian" never match a country name like "Nigeria".
+
+**One seam into the UI.** `toMatchInsights(match)` projects the engine's output
+onto the shape the existing components already render. No component knows the
+engine's vocabulary, so Explorer cards, detail pages and the homepage cannot
+disagree about a score.
+
+## Project layout
+
+```
+app/                 routes. /scholarships filters and sorts on the server via
+                     URL params, so results are shareable and indexable.
+components/          UI. components/ui is the design system; the rest is product.
+lib/matching/        The engine. Pure and deterministic.
+  weights.ts           Every number that turns facts into a score.
+  eligibility.ts       Rules; return data, perform no scoring.
+  engine.ts            Dimension evaluation, scoring, explanations.
+  rank.ts              Eligibility-first ordering.
+lib/profile/         Stored-profile validation.
+lib/demo/             Twelve illustrative scholarship records and six demo
+                      profiles. The data is invented and labelled as such
+                      everywhere it surfaces.
+scripts/             Verification. See below.
+types/               Data contracts.
+```
+
+## Verification
+
+Matching is where a plausible-looking wrong answer does real damage to a student,
+so the checks are mostly invariants that must hold for every profile and every
+record, rather than a handful of golden scores.
+
+```bash
+npm run verify         # typecheck, lint, query behaviour, matching engine
+npm run verify:all     # the above plus a11y and runtime, against a live server
+```
+
+| Script | Checks |
+| --- | --- |
+| `verify:query` | URL filtering, sorting, and that filters work without JavaScript |
+| `verify:matching` | Score determinism and bounds, hard-failure capping, unknown-is-not-none, work authorisation, degree ordering, stored-profile validation |
+| `verify:a11y` | Landmarks, heading order, form labels, control names, over served HTML |
+| `verify:runtime` | Routes, metadata, canonicals, sitemap, URL state |
+
+`verify:a11y` and `verify:runtime` need a server on port 3111:
+
+```bash
+npm run build && npm start -- -p 3111
+```
+
+## Current scope
+
+Built: profile builder, matching engine, explorer, detail pages, bookmarking.
+
+Not built, and deliberately out of scope so far: accounts, a database, server-side
+profile persistence, applications, payments, notifications, admin tooling.
+
+**Profiles live in `localStorage`.** Explorer and detail pages therefore score
+against a demo profile rather than the visitor's own — `localStorage` is
+invisible during server rendering, and reading it would make hydration disagree
+with the server HTML. Making stored profiles drive those pages needs an API and
+belongs to a later phase.
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

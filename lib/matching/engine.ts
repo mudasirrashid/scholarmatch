@@ -203,11 +203,18 @@ function evaluateDegreeDimension(profile: StudentProfile, scholarship: Scholarsh
         score: 0,
         detail: `This award expects ${scholarship.degreeLabel} entry; your current degree is below that.`,
       };
-    case "not_eligible":
+    case "overqualified":
+      /*
+       * Scored as a weak fit rather than a hard failure. Holding a doctorate does
+       * not stop someone applying to a master's award, so reporting this as
+       * "not eligible" would be a false statement about the provider's rules. It
+       * lands on `review`, which surfaces as a warning and costs score without
+       * capping the result as ineligible.
+       */
       return {
-        verdict: "Not eligible at this level",
-        score: 0,
-        detail: `This award is open to ${scholarship.degreeLabel} study, below the degree you already hold.`,
+        verdict: "Above this level",
+        score: 50,
+        detail: `You already hold a degree above this award's ${scholarship.degreeLabel} entry, so this is unlikely to be worth applying to.`,
       };
     case "unknown":
       return { verdict: "Needs your degree", score: null, needs: "preferredDegree" };
@@ -251,7 +258,7 @@ function evaluateEligibilityDimension(
 
   const authorization = evaluateWorkAuthorization(
     profile.eligibility?.workAuthorization,
-    scholarship.country,
+    scholarship.countryCode,
     profile.eligibility?.citizenship,
   );
   switch (authorization) {

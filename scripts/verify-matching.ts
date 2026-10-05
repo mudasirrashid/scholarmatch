@@ -23,8 +23,9 @@ import {
   rankScholarships,
   toMatchInsights,
 } from "@/lib/matching";
-import { evaluateNationality } from "@/lib/matching/eligibility";
+import { evaluateDegree, evaluateNationality, evaluateWorkAuthorization } from "@/lib/matching/eligibility";
 import { relateFields, relateToFields } from "@/lib/matching/fields";
+import { parseProfile, parseStoredProfile } from "@/lib/profile/parse";
 import { allScholarships } from "@/lib/scholarships";
 import { toPreviewFromMatch } from "@/lib/scholarships";
 import {
@@ -436,14 +437,31 @@ const mastersOnly = all.filter(
   (scholarship) => !scholarship.degreeLevels.includes("doctorate"),
 );
 
+/*
+ * A doctorate holder is not barred from applying to a master's award, so this is
+ * a poor fit rather than an ineligibility. Asserting the weaker, honest rule:
+ * the degree dimension warns, the record stays eligible, and nothing is capped
+ * as a hard failure.
+ */
 check(
-  "masters-only awards are ineligible to a doctorate applicant",
+  "masters-only awards read as a weak fit to a doctorate applicant, not a block",
   mastersOnly.every((scholarship) => {
     const match = matchScholarship(profileE, scholarship);
+    const degree = match.dimensions.find((dimension) => dimension.id === "degree");
+
     return (
-      match.dimensions.find((dimension) => dimension.id === "degree")?.status === "not_eligible" &&
-      match.eligibility.hardFailures.includes("Degree")
+      degree?.status === "review" &&
+      !match.eligibility.hardFailures.includes("Degree") &&
+      match.eligibility.isEligible
     );
+  }),
+  true,
+);
+check(
+  "an overqualified degree never produces an ineligible verdict",
+  mastersOnly.every((scholarship) => {
+    const match = matchScholarship(profileE, scholarship);
+    return match.eligibility.isEligible && match.score > HARD_FAILURE_CAP;
   }),
   true,
 );
@@ -603,6 +621,222 @@ check(
     toMatchInsights(matchScholarship(activeDemoProfile, scholarship)).score,
   ),
   all.map((scholarship) => toPreviewFromMatch(scholarship, activeDemoProfile).matchScore),
+);
+
+/* ==========================================================================
+   14. Work authorisation
+   ========================================================================== */
+
+section("Work authorisation");
+
+const ukRecord = all.find((scholarship) => scholarship.countryCode === "GB");
+const deRecord = all.find((scholarship) => scholarship.countryCode === "DE");
+
+check("a UK award exists to test against", ukRecord !== undefined, true);
+check("a German award exists to test against", deRecord !== undefined, true);
+
+if (ukRecord !== undefined && deRecord !== undefined) {
+  /*
+   * Regression guard. These compare a profile's ISO citizenship code against the
+   * award's host country, and the two used to be different shapes: the code
+   * ("GB") was compared to the display name ("United Kingdom"), so the match
+   * could never fire and every citizen was treated as a foreign applicant.
+   */
+  check(
+    "a citizen of the host country has their right established",
+    evaluateWorkAuthorization("citizen", ukRecord.countryCode, "GB"),
+    "citizen_or_resident",
+  );
+  check(
+    "the comparison is case-insensitive",
+    evaluateWorkAuthorization("citizen", ukRecord.countryCode, "gb"),
+    "citizen_or_resident",
+  );
+  check(
+    "a citizen studying elsewhere still needs a visa",
+    evaluateWorkAuthorization("citizen", deRecord.countryCode, "GB"),
+    "needs_visa",
+  );
+  check(
+    "a permanent resident of another country still needs a visa",
+    evaluateWorkAuthorization("permanent_resident", deRecord.countryCode, "GB"),
+    "needs_visa",
+  );
+  check(
+    "citizenship alone settles it when status is blank",
+    evaluateWorkAuthorization(undefined, ukRecord.countryCode, "GB"),
+    "citizen_or_resident",
+  );
+  check(
+    "an unanswered status stays unknown",
+    evaluateWorkAuthorization(undefined, deRecord.countryCode, "GB"),
+    "unknown",
+  );
+  check(
+    "an explicit not_specified stays unknown",
+    evaluateWorkAuthorization("not_specified", deRecord.countryCode, "GB"),
+    "unknown",
+  );
+  check(
+    "no right to work is not satisfied",
+    evaluateWorkAuthorization("no_right_to_work", deRecord.countryCode, "DE"),
+    "citizen_or_resident",
+  );
+  check(
+    "no right to work is refused for a foreign applicant",
+    evaluateWorkAuthorization("no_right_to_work", deRecord.countryCode, "NG"),
+    "not_satisfied",
+  );
+
+  /*
+   * And the observable consequence: Profile D is a GB citizen, so the UK award
+   * must score its right to study as established while the German one does not.
+   */
+  const ukDegree = matchScholarship(profileD, ukRecord).dimensions.find(
+    (dimension) => dimension.id === "eligibility",
+  );
+  const deDegree = matchScholarship(profileD, deRecord).dimensions.find(
+    (dimension) => dimension.id === "eligibility",
+  );
+
+  check(
+    "a host citizen scores higher on eligibility than a foreign applicant",
+    (ukDegree?.score ?? 0) > (deDegree?.score ?? 0),
+    true,
+  );
+}
+
+/* ==========================================================================
+   15. Degree ordering
+   ========================================================================== */
+
+section("Degree ordering");
+
+/*
+ * The verdict used to read `awardLevels[0]`, so an award listing
+ * [doctorate, masters] and one listing [masters, doctorate] scored a bachelor's
+ * applicant differently. Order in the data must not change the answer.
+ */
+check(
+  "level order does not change a below-entry verdict",
+  [
+    evaluateDegree("bachelors", undefined, ["doctorate", "masters"]),
+    evaluateDegree("bachelors", undefined, ["masters", "doctorate"]),
+  ],
+  ["below_entry", "below_entry"],
+);
+check(
+  "level order does not change an overqualified verdict",
+  [
+    evaluateDegree("doctorate", undefined, ["masters", "bachelors"]),
+    evaluateDegree("doctorate", undefined, ["bachelors", "masters"]),
+  ],
+  ["overqualified", "overqualified"],
+);
+check("an exact match is exact", evaluateDegree("masters", undefined, ["masters", "doctorate"]), "exact");
+check(
+  "a step up is allowed",
+  evaluateDegree("masters", "doctorate", ["masters", "bachelors"]),
+  "eligible_step_up",
+);
+check(
+  "with no stated preference the degree held is the intent, not a step up",
+  evaluateDegree("bachelors", undefined, ["masters", "doctorate"]),
+  "below_entry",
+);
+check("no levels means open", evaluateDegree("doctorate", undefined, []), "eligible_step_up");
+check("no intent means unknown", evaluateDegree(undefined, undefined, ["masters"]), "unknown");
+check(
+  "a preference overrides the degree held",
+  evaluateDegree("doctorate", "doctorate", ["doctorate", "masters"]),
+  "exact",
+);
+
+/* ==========================================================================
+   16. Stored profile validation
+   ========================================================================== */
+
+section("Stored profile validation");
+
+check("a null read is not a profile", parseStoredProfile(null), null);
+check("unparseable JSON is not a profile", parseStoredProfile("{not json"), null);
+check("a non-object is not a profile", parseStoredProfile("[]"), null);
+check("an unknown schema version is rejected", parseStoredProfile('{"schemaVersion":2}'), null);
+check("a missing schema version is rejected", parseStoredProfile("{}"), null);
+check(
+  "a valid profile round-trips unchanged",
+  parseStoredProfile(JSON.stringify(profileA)),
+  profileA,
+);
+check(
+  "an out-of-range GPA is dropped",
+  parseProfile({ schemaVersion: 1, academic: { gpa: 9.5 } })?.academic?.gpa,
+  undefined,
+);
+check(
+  "a non-numeric GPA is dropped",
+  parseProfile({ schemaVersion: 1, academic: { gpa: "3.7" } })?.academic?.gpa,
+  undefined,
+);
+check(
+  "a zero GPA is kept, because zero is a real answer",
+  parseProfile({ schemaVersion: 1, academic: { gpa: 0 } })?.academic?.gpa,
+  0,
+);
+check(
+  "an invalid degree enum is dropped",
+  parseProfile({ schemaVersion: 1, academic: { currentDegree: "postgrad" } })?.academic?.currentDegree,
+  undefined,
+);
+check(
+  "an IELTS score above the 9-band scale is dropped",
+  parseProfile({ schemaVersion: 1, eligibility: { languageTests: { ielts: 120 } } })?.eligibility
+    ?.languageTests?.ielts,
+  undefined,
+);
+check(
+  "a valid TOEFL score is kept",
+  parseProfile({ schemaVersion: 1, eligibility: { languageTests: { toefl: 108 } } })?.eligibility
+    ?.languageTests?.toefl,
+  108,
+);
+check(
+  "citizenship is normalised to upper case",
+  parseProfile({ schemaVersion: 1, eligibility: { citizenship: " ng " } })?.eligibility?.citizenship,
+  "NG",
+);
+check(
+  "zero years of experience is kept as a known fact",
+  parseProfile({ schemaVersion: 1, experience: { workExperienceYears: 0 } })?.experience
+    ?.workExperienceYears,
+  0,
+);
+check(
+  "an empty preference list is kept as known-none",
+  parseProfile({ schemaVersion: 1, preferences: { preferredCountries: [] } })?.preferences
+    ?.preferredCountries,
+  [],
+);
+check(
+  "unknown top-level keys are ignored rather than fatal",
+  parseProfile({ schemaVersion: 1, somethingNew: true })?.schemaVersion,
+  1,
+);
+check(
+  "a malformed section is dropped whole, not partly believed",
+  parseProfile({ schemaVersion: 1, academic: "nope" })?.academic,
+  undefined,
+);
+check(
+  "a malformed start date is dropped",
+  parseProfile({ schemaVersion: 1, goals: { startBy: "soon" } })?.goals?.startBy,
+  undefined,
+);
+check(
+  "a language entry missing proficiency is dropped",
+  parseProfile({ schemaVersion: 1, eligibility: { languages: [{ language: "English" }] } })?.eligibility
+    ?.languages,
+  [],
 );
 
 /* ==========================================================================

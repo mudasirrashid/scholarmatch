@@ -49,7 +49,7 @@ export type DegreeVerdict =
   | "exact"
   | "eligible_step_up"
   | "below_entry"
-  | "not_eligible"
+  | "overqualified"
   | "unknown";
 
 /**
@@ -77,14 +77,22 @@ export function evaluateDegree(
   if (targets.includes(intent)) return "exact";
 
   const intentRank = DEGREE_ORDER[intent];
-  if (intentRank < DEGREE_ORDER[targets[0] as StudentDegree]) return "below_entry";
+  // Compare against the lowest level offered, not the first listed one. An award
+  // listing [doctorate, masters] is still open to a bachelor's applicant via the
+  // master's route, so ordering of the array must not change the verdict.
+  const lowestOffered = targets.reduce(
+    (lowest, level) => (DEGREE_ORDER[level] < DEGREE_ORDER[lowest] ? level : lowest),
+    targets[0] as StudentDegree,
+  );
+  if (intentRank < DEGREE_ORDER[lowestOffered]) return "below_entry";
 
-  // Entering a level below the one held, or between two offered levels.
+  // The intent is offered or above the entry floor, but the student holds a level
+  // higher than anything the award covers, so there is nothing left to study.
   if (
     currentDegree !== undefined &&
-    targets.some((level) => DEGREE_ORDER[level] < DEGREE_ORDER[currentDegree])
+    targets.every((level) => DEGREE_ORDER[level] < DEGREE_ORDER[currentDegree])
   ) {
-    return "not_eligible";
+    return "overqualified";
   }
 
   return "eligible_step_up";
@@ -139,19 +147,32 @@ export function evaluateNationality(
  *
  * `not_specified` is treated as unknown rather than as a refusal: providers that
  * do not care about status should not lose a student who has not answered yet.
+ *
+ * `hostCountryCode` is the record's ISO alpha-2 code, not its display name. The
+ * two are different shapes ("NG" versus "Nigeria"), so comparing a profile's
+ * citizenship against the country name can never match and would silently treat
+ * every citizen as a foreign applicant needing a visa.
  */
 export function evaluateWorkAuthorization(
   authorization: WorkAuthorization | undefined,
-  hostCountry: string,
+  hostCountryCode: string,
   citizenship: string | undefined,
 ): "satisfied" | "citizen_or_resident" | "needs_visa" | "not_satisfied" | "unknown" {
+  // Being a citizen of the host country settles it, so this is checked before the
+  // status field. A student who left status blank but recorded their citizenship
+  // has told us enough: a citizen needs no visa to study in their own country.
+  const isHostCitizen =
+    citizenship !== undefined && citizenship.toUpperCase() === hostCountryCode.toUpperCase();
+  if (isHostCitizen) return "citizen_or_resident";
+
   if (authorization === undefined || authorization === "not_specified") return "unknown";
-  if (citizenship !== undefined && citizenship === hostCountry) return "citizen_or_resident";
 
   switch (authorization) {
     case "citizen":
     case "permanent_resident":
-      return "citizen_or_resident";
+      // A citizen of somewhere else has no automatic right to study here, and a
+      // permanent residence right is only valid in the country that granted it.
+      return "needs_visa";
     case "student_visa":
     case "work_permit":
       return "needs_visa";

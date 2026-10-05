@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 
+import { parseStoredProfile } from "@/lib/profile/parse";
+
 import type { StudentProfile } from "@/types/student";
 
 /**
@@ -53,35 +55,13 @@ interface ProfileContextValue {
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
 /**
- * Keeps only known keys at the top level.
- *
- * Stored JSON is user-writable and survives across schema versions, so it is
- * treated as untrusted input. Nested sections are validated field by field in
- * `parseProfile`; this is the coarse pass that drops anything unexpected.
- */
-function isProfile(value: unknown): value is StudentProfile {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Partial<StudentProfile>;
-  return candidate.schemaVersion === 1;
-}
-
-/**
  * Normalises a parsed profile.
  *
- * An unrecognised or malformed value yields `null`, which the caller turns into
- * the empty profile. A visitor with corrupt storage should see the builder, not
- * a crash.
+ * Validation lives in `lib/profile/parse` so it can be tested directly and reused
+ * once profiles arrive from a server instead of from `localStorage`. An
+ * unrecognised or malformed value yields `null`, which becomes the empty profile:
+ * a visitor with corrupt storage should see the builder, not a crash.
  */
-function parse(raw: string | null): StudentProfile | null {
-  if (!raw) return null;
-
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return isProfile(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * `getSnapshot` must be referentially stable for unchanged data, so the parsed
@@ -103,7 +83,7 @@ function getSnapshot(): StudentProfile | undefined {
 
   if (raw !== cachedRaw) {
     cachedRaw = raw;
-    cachedProfile = parse(raw);
+    cachedProfile = parseStoredProfile(raw);
   }
 
   return cachedProfile ?? undefined;

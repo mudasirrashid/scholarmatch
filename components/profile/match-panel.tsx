@@ -7,7 +7,7 @@ import { StatusBar } from "@/components/scholarships/detail/status-bar";
 import { Badge } from "@/components/ui/badge";
 import { MatchRing } from "@/components/ui/match-ring";
 import { matchTone } from "@/lib/format";
-import { MATCH_QUALITY_LABELS, rankScholarships, topMatches } from "@/lib/matching";
+import { MATCH_QUALITY_LABELS, rankScholarships, toMatchInsights, topMatches } from "@/lib/matching";
 import { allScholarships, toPreview } from "@/lib/scholarships";
 
 import type { RankedScholarship } from "@/types/matching";
@@ -127,14 +127,10 @@ export function MatchPanel({
  */
 function ResultRow({ entry }: { entry: RankedScholarship }) {
   const { scholarship, match } = entry;
-  const preview = toPreview(scholarship, {
-    score: match.score,
-    summary: match.summary,
-    breakdown: [],
-    missingRequirements: [],
-    strengths: match.strengths,
-    warnings: match.warnings,
-  });
+  // Projected through the same adapter the detail page uses, so the funding and
+  // deadline wording here cannot drift from the record page. `match` is already
+  // computed, so it is passed in rather than rescored.
+  const preview = toPreview(scholarship, toMatchInsights(match));
 
   return (
     <li className="rounded-xl border border-hairline-soft bg-white/[0.03] p-4">
