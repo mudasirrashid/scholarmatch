@@ -132,6 +132,7 @@ await audit("explorer", "/scholarships");
 const filtered = await audit("explorer filtered", "/scholarships?country=canada");
 await audit("detail", "/scholarships/demo-global-excellence");
 await audit("404", "/scholarships/not-a-real-id");
+await audit("profile", "/profile");
 
 /* Filtered views must still be complete, not a client-only shell. */
 console.log("\n--- no-JS content ---");
@@ -163,6 +164,32 @@ const home = await (await fetch(BASE + "/")).text();
 const explorerHtml = await (await fetch(BASE + "/scholarships")).text();
 check("explorer discloses demo content", /illustrative|sample content|demo/i.test(explorerHtml), true);
 check("homepage discloses demo content", /illustrative|sample content|preview/i.test(home), true);
+
+/*
+ * The profile builder is a client island, so its form and match panel only
+ * exist after hydration. Server HTML alone cannot prove the wizard is usable,
+ * so these assertions are deliberately about what the server must still send:
+ * the heading, and an honest statement that nothing is known yet.
+ */
+console.log("\n--- profile builder ---");
+const profile = await (await fetch(BASE + "/profile")).text();
+check("profile page has one h1", (profile.match(/<h1[^>]*>/g) ?? []).length, 1);
+check(
+  "profile page states where answers are stored",
+  /this browser only/i.test(profile),
+  true,
+);
+check(
+  "profile page does not claim a score before hydration",
+  /nothing answered|provisional/i.test(profile),
+  true,
+);
+check(
+  "profile form is not shipped empty into the server HTML",
+  /<form/i.test(profile),
+  false,
+  "the wizard mounts client-side; server HTML must not contain a half-built form",
+);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

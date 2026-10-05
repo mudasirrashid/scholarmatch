@@ -22,6 +22,8 @@ import { AmbientField } from "@/components/ui/ambient-field";
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/badge";
+import { activeDemoProfile } from "@/lib/demo/student-profiles";
+import { matchScholarship, toMatchInsights } from "@/lib/matching";
 import { allScholarships, getScholarship } from "@/lib/scholarships";
 import { matchTone } from "@/lib/format";
 
@@ -52,7 +54,10 @@ export async function generateMetadata({
     return { title: "Scholarship not found" };
   }
 
-  const description = `${scholarship.fundingLabel} for ${scholarship.degreeLabel} study in ${scholarship.country}. ${scholarship.match.summary}`;
+  // Same engine call the page body uses, so the search description quotes the
+  // verdict a visitor actually sees.
+  const match = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
+  const description = `${scholarship.fundingLabel} for ${scholarship.degreeLabel} study in ${scholarship.country}. ${match.summary}`;
 
   return {
     title: `${scholarship.title} at ${scholarship.organization}`,
@@ -89,7 +94,11 @@ export default async function ScholarshipDetailPage({
 
   if (!scholarship) notFound();
 
-  const score = scholarship.match.score;
+  // Evaluated once, then reused for the ring, the breakdown and the metadata.
+  // The explorer calls the same function with the same profile, which is what
+  // keeps the list score and the detail score identical.
+  const match = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
+  const score = match.score;
 
   return (
     <SavedProvider>
@@ -152,7 +161,7 @@ export default async function ScholarshipDetailPage({
                 <MatchRing score={score} size="lg" label="Overall match" />
 
                 <p className="mt-4 max-w-[13rem] text-pretty text-[0.8125rem] text-mist-400">
-                  {scholarship.match.summary}
+                  {match.summary}
                 </p>
               </div>
             </div>
@@ -216,15 +225,15 @@ export default async function ScholarshipDetailPage({
               title="Your match"
               description="Where you stand against each requirement, and what to fix before you apply."
             >
-              <MatchBreakdown match={scholarship.match} />
+              <MatchBreakdown match={match} />
 
-              {scholarship.match.missingRequirements.length > 0 ? (
+              {match.missingRequirements.length > 0 ? (
                 <div className="surface-glass mt-6 rounded-2xl p-5">
                   <h3 className="text-sm font-medium text-mist-100">
                     Still needed before you apply
                   </h3>
                   <ul className="mt-3 space-y-2">
-                    {scholarship.match.missingRequirements.map((requirement) => (
+                    {match.missingRequirements.map((requirement) => (
                       <li key={requirement} className="flex gap-2.5 text-sm text-mist-300">
                         <span
                           className="mt-2 size-1 shrink-0 rounded-full bg-amber-400"

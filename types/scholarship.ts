@@ -136,11 +136,34 @@ export type LanguageTest = "ielts" | "toefl" | "duolingo";
 /**
  * A language filter member.
  *
- * `"none"` is a real selection rather than a sentinel: students often want
+ * `"none"` is a real selection rather than a sentinel: students often want to
  * opportunities that list no test requirement, which is why it is part of the
  * filter union and survives a URL round trip.
  */
 export type LanguageFilter = LanguageTest | "none";
+
+/**
+ * Minimum scores a provider accepts, per test.
+ *
+ * Phase 02 carried these thresholds only inside the human-readable
+ * `EligibilityCriterion.value` strings, which is fine for display but cannot be
+ * evaluated. Phase 03 transcribes them into machine-readable form so the
+ * matching engine can compare real numbers instead of parsing English.
+ *
+ * The relationship to `languageTests` is deliberate:
+ * `languageTests` lists which tests a provider accepts, this object lists the
+ * minimum score for each. A test can be accepted with no published minimum, in
+ * which case the key is absent and the engine reports the threshold as unknown
+ * rather than inventing one.
+ */
+export interface LanguageRequirement {
+  /** Minimum IELTS band, 0-9. */
+  ielts?: number;
+  /** Minimum TOEFL score, 0-120. */
+  toefl?: number;
+  /** Minimum Duolingo English Test score, 0-160. */
+  duolingo?: number;
+}
 
 /** How the award is paid out. Ordered from most to least comprehensive. */
 export type FundingTier =
@@ -160,9 +183,9 @@ export type SortKey = "best_match" | "deadline_soon" | "newest" | "fully_funded"
 /**
  * Outcome of comparing one requirement against one student.
  *
- * The matching engine of Phase 03/04 will produce these. Phase 02 ships them
- * as authored demo values so the vocabulary is settled before any real
- * evaluation logic exists.
+ * Phase 02 shipped these as authored demo values so the vocabulary was settled
+ * before any evaluation logic existed. Phase 03 produces them from
+ * `lib/matching`; no hand-written status survives in the demo data.
  */
 export type EligibilityStatus =
   | "strong_match"
@@ -322,8 +345,25 @@ export interface Scholarship {
   /** Rendered eligibility floor, e.g. "3.5+ GPA". */
   gpaLabel: string;
 
+  /**
+ * Eligibility as the provider states it, for display.
+ *
+ * Prose, because providers publish prose and because it carries conditions a
+ * code cannot ("financial means are assessed", "mobility rule applies"). Never
+ * parse this for eligibility decisions; read `eligibleCountries` instead.
+ */
   nationality: string;
+  /**
+   * ISO 3166-1 alpha-2 codes the award restricts eligibility to.
+   *
+   * Absent or empty means open to all nationalities. Phase 03 adds this
+   * alongside `nationality` for the same reason as `languageRequirements`: the
+   * prose is for humans, this field is for the engine.
+   */
+  eligibleCountries?: readonly string[];
   languageTests: readonly LanguageTest[];
+  /** Minimum scores the provider accepts, per test. */
+  languageRequirements?: LanguageRequirement;
   /** Fields that accept a waiver in place of a language test. */
   languageNote?: string;
 
@@ -338,7 +378,16 @@ export interface Scholarship {
   duration: string;
   applicationFee: string;
 
-  match: MatchInsights;
+  /**
+   * No `match` field by design.
+   *
+   * Phase 02 authored a score, breakdown, strengths and warnings onto each of
+   * the twelve demo records so the vocabulary existed before any evaluation
+   * logic did. Phase 03 replaces those hand-written values with output from
+   * `lib/matching`, which keeps exactly one score per scholarship in the system.
+   * Leaving a second, hand-maintained copy here is what previously allowed the
+   * list and the detail page to disagree.
+   */
 
   officialSource: OfficialSource;
 }

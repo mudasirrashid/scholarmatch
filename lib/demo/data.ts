@@ -18,9 +18,15 @@
  * so the marketing page and the explorer can never disagree about an
  * opportunity. When the real service lands, delete this module and hydrate the
  * same `Scholarship` shape from the API.
+ *
+ * Phase 03 note: these records no longer carry a `match` field. Every score in
+ * the product comes from `lib/matching`, evaluated against
+ * `activeDemoProfile`, so there is exactly one place a match is computed.
  */
 
-import { toPreview } from "@/lib/scholarships/preview";
+import { normaliseGpa } from "@/lib/matching/academic";
+import { toPreviewFromMatch } from "@/lib/scholarships/preview";
+import { activeDemoProfile } from "@/lib/demo/student-profiles";
 import type {
   ApplicationStage,
   CommonMistake,
@@ -232,6 +238,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.5+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 6.5, toefl: 90 },
     languageNote: "Waived if your previous three years of study were taught in English.",
     eligibility: [
       {
@@ -312,31 +319,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "24 months",
     applicationFee: "None",
-    match: {
-      score: 96,
-      summary: "Strong fit based on your current profile.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Excellent", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "language",
-          label: "Language",
-          verdict: "Requirement may apply",
-          status: "review",
-          detail: "A proficiency certificate would complete this.",
-        },
-        { id: "experience", label: "Experience", verdict: "Not required", status: "not_specified" },
-      ],
-      missingRequirements: ["Language proficiency certificate"],
-      strengths: [
-        "Your degree level is eligible",
-        "Your field of study matches",
-        "Your academic profile fits the cohort",
-      ],
-      warnings: ["Language requirement needs verification"],
-    },
     officialSource: { provider: "Illustrative University", isDemo: true },
   },
 
@@ -379,6 +361,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.0+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 6.5, toefl: 90 },
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
       { id: "degree", label: "Degree", value: "Bachelor's in a technical discipline", status: "meets" },
@@ -445,35 +428,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "24 months",
     applicationFee: "None",
-    match: {
-      score: 88,
-      summary: "Strong fit, with a portfolio to prepare.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Close match", status: "meets" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "portfolio",
-          label: "Portfolio",
-          verdict: "Needs preparation",
-          status: "review",
-          detail: "Two written case studies would strengthen this.",
-        },
-        {
-          id: "language",
-          label: "Language",
-          verdict: "Requirement may apply",
-          status: "review",
-        },
-      ],
-      missingRequirements: ["Portfolio of prior work"],
-      strengths: [
-        "Your field of study matches",
-        "Your academic profile fits the cohort",
-      ],
-      warnings: ["Portfolio of prior work required", "Partial funding — budget for the difference"],
-    },
     officialSource: { provider: "Illustrative Institute of Technology", isDemo: true },
   },
 
@@ -599,35 +553,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus with clinical placement",
     duration: "36 months",
     applicationFee: "None",
-    match: {
-      score: 74,
-      summary: "Possible fit — doctoral entry needs reviewing.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Adjacent", status: "meets" },
-        {
-          id: "degree",
-          label: "Degree",
-          verdict: "Needs a prior master's",
-          status: "review",
-          detail: "Relevant research experience may be assessed instead.",
-        },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "experience",
-          label: "Experience",
-          verdict: "Review required",
-          status: "review",
-        },
-        { id: "language", label: "Language", verdict: "Waived with clinical MBBS", status: "meets" },
-      ],
-      missingRequirements: ["Prior master's degree or equivalent clinical research record"],
-      strengths: ["Your academic profile fits the cohort"],
-      warnings: [
-        "Doctorate entry requires a prior master's",
-        "A named research supervisor is expected",
-      ],
-    },
     officialSource: { provider: "Illustrative Health Sciences Centre", isDemo: true },
   },
 
@@ -665,6 +590,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.7+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 7.5, toefl: 105 },
     languageNote: "Waived where your doctoral application was submitted in English.",
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
@@ -753,31 +679,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "48 months",
     applicationFee: "CA$25",
-    match: {
-      score: 98,
-      summary: "Exceptional fit on field and academic standing.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Excellent", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        { id: "experience", label: "Experience", verdict: "Strong", status: "strong_match" },
-        {
-          id: "language",
-          label: "Language",
-          verdict: "Higher test band",
-          status: "review",
-          detail: "This award asks for IELTS 7.5 rather than the usual 6.5.",
-        },
-      ],
-      missingRequirements: ["Higher language band (IELTS 7.5+)"],
-      strengths: [
-        "Your field of study matches exactly",
-        "Your academic standing clears the top band",
-        "Fully funded with research budget",
-      ],
-      warnings: ["Language requirement needs verification"],
-    },
     officialSource: { provider: "Illustrative Institute for Advanced Study", isDemo: true },
   },
 
@@ -816,6 +717,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.0+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl", "duolingo"],
+    languageRequirements: { ielts: 6, toefl: 80, duolingo: 110 },
     languageNote: "Duolingo English Test accepted for this award.",
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
@@ -899,32 +801,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "36 months",
     applicationFee: "None",
-    match: {
-      score: 71,
-      summary: "Field is adjacent rather than exact.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        {
-          id: "field",
-          label: "Field",
-          verdict: "Adjacent",
-          status: "review",
-          detail: "Open to development studies and business tracks.",
-        },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        { id: "language", label: "Language", verdict: "Multiple tests accepted", status: "meets" },
-        {
-          id: "portfolio",
-          label: "Portfolio",
-          verdict: "Not specified",
-          status: "not_specified",
-        },
-      ],
-      missingRequirements: ["Field alignment with a listed programme track"],
-      strengths: ["Academic standing clears the requirement", "Duolingo test accepted"],
-      warnings: ["Tuition only — no living costs covered"],
-    },
     officialSource: { provider: "Illustrative College of Arts", isDemo: true },
   },
 
@@ -958,6 +834,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.0+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 6, toefl: 75 },
     languageNote: "English-taught programme; a waiver applies for degrees taught in English.",
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
@@ -1022,27 +899,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "24 months",
     applicationFee: "None",
-    match: {
-      score: 78,
-      summary: "Good field fit, partial funding.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Close match", status: "meets" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        { id: "language", label: "Language", verdict: "Meets requirement", status: "meets" },
-        {
-          id: "funding",
-          label: "Funding",
-          verdict: "Partial",
-          status: "review",
-          detail: "Half of tuition plus a small stipend.",
-        },
-      ],
-      missingRequirements: [],
-      strengths: ["Your field of study is closely related", "Language requirement already met"],
-      warnings: ["Partial funding — you must cover the remaining tuition"],
-    },
     officialSource: { provider: "Illustrative School of Public Health", isDemo: true },
   },
 
@@ -1076,6 +932,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.0+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl", "duolingo"],
+    languageRequirements: { ielts: 6.5, toefl: 90 },
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
       {
@@ -1146,33 +1003,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus with placement",
     duration: "18 months",
     applicationFee: "€120",
-    match: {
-      score: 62,
-      summary: "Field and experience requirements need review.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        {
-          id: "field",
-          label: "Field",
-          verdict: "Adjacent",
-          status: "review",
-          detail: "Open to economics and finance tracks.",
-        },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "experience",
-          label: "Experience",
-          verdict: "Review required",
-          status: "review",
-          detail: "One year of work experience is expected.",
-        },
-        { id: "language", label: "Language", verdict: "Meets requirement", status: "meets" },
-      ],
-      missingRequirements: ["One year of professional work experience"],
-      strengths: ["Academic standing clears the requirement"],
-      warnings: ["Work experience required", "Partial funding"],
-    },
     officialSource: { provider: "Illustrative Business School", isDemo: true },
   },
 
@@ -1217,6 +1047,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.0+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 6, toefl: 80 },
     languageNote: "Japanese proficiency may be required for some research groups.",
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
@@ -1289,31 +1120,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "24 months",
     applicationFee: "None",
-    match: {
-      score: 90,
-      summary: "Strong fit — research supervisor needed.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "research",
-          label: "Research Plan",
-          verdict: "Needs a supervisor",
-          status: "review",
-        },
-        {
-          id: "language",
-          label: "Language",
-          verdict: "Requirement may apply",
-          status: "review",
-        },
-      ],
-      missingRequirements: ["Agreement with a supervising professor"],
-      strengths: ["Your field of study matches", "Comprehensive funding package"],
-      warnings: ["Research supervisor must be agreed before applying"],
-    },
     officialSource: { provider: "Illustrative National Institute of Technology", isDemo: true },
   },
 
@@ -1347,6 +1153,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.5+ GPA",
     nationality: "Open to all nationalities",
     languageTests: ["toefl"],
+    languageRequirements: { toefl: 95 },
     languageNote: "TOEFL accepted for this award; IELTS scores are not accepted.",
     eligibility: [
       { id: "nationality", label: "Nationality", value: "Open to all nationalities", status: "meets" },
@@ -1408,33 +1215,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus, full time",
     duration: "12 months",
     applicationFee: "None",
-    match: {
-      score: 85,
-      summary: "Very strong field fit; verify the language test type.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "language",
-          label: "Language",
-          verdict: "TOEFL required",
-          status: "review",
-          detail: "IELTS is not accepted for this award.",
-        },
-        {
-          id: "funding",
-          label: "Funding",
-          verdict: "Stipend only",
-          status: "review",
-          detail: "Tuition is charged at the standard rate.",
-        },
-      ],
-      missingRequirements: ["TOEFL score of 95+"],
-      strengths: ["Your field of study matches exactly", "Academic standing clears the requirement"],
-      warnings: ["TOEFL required — IELTS not accepted", "Tuition is not waived", "Closing soon"],
-    },
     officialSource: { provider: "Illustrative University", isDemo: true },
   },
 
@@ -1473,6 +1253,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "2.5+ GPA",
     nationality: "Open to students from low-income backgrounds",
     languageTests: ["ielts", "toefl", "duolingo"],
+    languageRequirements: { ielts: 6, toefl: 75, duolingo: 100 },
     eligibility: [
       {
         id: "nationality",
@@ -1555,35 +1336,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus with field placement",
     duration: "24 months",
     applicationFee: "None",
-    match: {
-      score: 68,
-      summary: "Open to you, subject to a financial assessment.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Meets requirement", status: "meets" },
-        { id: "field", label: "Field", verdict: "Close match", status: "meets" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        {
-          id: "nationality",
-          label: "Nationality",
-          verdict: "Financial assessment",
-          status: "review",
-          detail: "Financial circumstances are assessed as part of the application.",
-        },
-        {
-          id: "income",
-          label: "Financial Circumstances",
-          verdict: "Evidence required",
-          status: "review",
-        },
-        { id: "language", label: "Language", verdict: "Multiple tests accepted", status: "meets" },
-      ],
-      missingRequirements: ["Evidence of financial need"],
-      strengths: [
-        "Your GPA clears the requirement comfortably",
-        "Three language tests accepted",
-      ],
-      warnings: ["Financial circumstances are assessed", "Small one-off grant, not a full award"],
-    },
     officialSource: { provider: "Illustrative Foundation for Public Good", isDemo: true },
   },
 
@@ -1628,6 +1380,7 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     gpaLabel: "3.5+ GPA",
     nationality: "Open to all nationalities; mobility rule applies",
     languageTests: ["ielts", "toefl"],
+    languageRequirements: { ielts: 6.5, toefl: 90 },
     eligibility: [
       {
         id: "nationality",
@@ -1717,30 +1470,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "Relocating, full time",
     duration: "48 months",
     applicationFee: "None",
-    match: {
-      score: 87,
-      summary: "Excellent field fit; mobility history needs checking.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        {
-          id: "mobility",
-          label: "Mobility Rule",
-          verdict: "Check your history",
-          status: "review",
-          detail: "Time spent abroad in the last three years is assessed.",
-        },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        { id: "language", label: "Language", verdict: "Meets requirement", status: "meets" },
-      ],
-      missingRequirements: ["Confirmation of mobility rule eligibility"],
-      strengths: [
-        "Your field of study matches exactly",
-        "Salaried position with full social insurance",
-      ],
-      warnings: ["Mobility rule may restrict eligibility", "Requires two host supervisors"],
-    },
     officialSource: { provider: "Illustrative European Research Consortium", isDemo: true },
   },
 
@@ -1850,27 +1579,6 @@ const RAW_SCHOLARSHIPS: readonly Scholarship[] = [
     studyMode: "On campus with research component",
     duration: "24 months",
     applicationFee: "A$100",
-    match: {
-      score: 83,
-      summary: "Strong fit — offer acceptance comes first.",
-      breakdown: [
-        { id: "academic", label: "Academic", verdict: "Strong", status: "strong_match" },
-        { id: "field", label: "Field", verdict: "Exact match", status: "strong_match" },
-        { id: "degree", label: "Degree", verdict: "Matches", status: "meets" },
-        { id: "nationality", label: "Nationality", verdict: "Eligible", status: "meets" },
-        {
-          id: "enrolment",
-          label: "Enrolment",
-          verdict: "Offer acceptance required",
-          status: "review",
-          detail: "An unconditional offer is usually required before applying.",
-        },
-        { id: "language", label: "Language", verdict: "Waiver likely", status: "meets" },
-      ],
-      missingRequirements: ["Accepted and confirmed programme offer"],
-      strengths: ["Your field of study matches exactly", "Three language tests accepted"],
-      warnings: ["Offer acceptance deadline is earlier than the award deadline", "Closing soon"],
-    },
     officialSource: { provider: "Illustrative Institute of Technology", isDemo: true },
   },
 ];
@@ -1885,24 +1593,52 @@ export const scholarships: readonly Scholarship[] = RAW_SCHOLARSHIPS;
 /**
  * Phase 01 fixtures, derived so the marketing page cannot drift from the
  * explorer. The record ids below match the originals exactly.
+ *
+ * Phase 03 routes each preview through the matching engine against
+ * `activeDemoProfile`, so the marketing surfaces show the same scores the
+ * explorer and detail pages show for the same records.
  */
-export const featuredScholarship: ScholarshipPreview = toPreview(RAW_SCHOLARSHIPS[0]);
+export const featuredScholarship: ScholarshipPreview = toPreviewFromMatch(
+  requireRecord(RAW_SCHOLARSHIPS[0]),
+  activeDemoProfile,
+);
 
 /** The two additional cards shown in the homepage showcase. */
 export const additionalScholarships: readonly ScholarshipPreview[] = [
-  toPreview(RAW_SCHOLARSHIPS[1]),
-  toPreview(RAW_SCHOLARSHIPS[2]),
+  toPreviewFromMatch(requireRecord(RAW_SCHOLARSHIPS[1]), activeDemoProfile),
+  toPreviewFromMatch(requireRecord(RAW_SCHOLARSHIPS[2]), activeDemoProfile),
 ];
 
-/** Fictional student used to illustrate the matching concept. */
+/**
+ * Fictional student used to illustrate the matching concept.
+ *
+ * `academicScore` is no longer hand-written: it is derived from the same profile
+ * the engine scores with, so the number in the hero cannot drift from the
+ * rankings on the other pages.
+ */
 export const demoProfile: StudentProfilePreview = {
   displayName: "A. Rahman",
   degreeLabel: "Master's candidate",
   fieldLabel: "Data Science",
   institutionLabel: "Illustrative University",
   languages: ["English", "German (B2)"],
-  academicScore: 91,
+  academicScore: normaliseGpa(activeDemoProfile.academic?.gpa) ?? 0,
 };
+
+/**
+ * Index-safe accessor for the homepage fixtures.
+ *
+ * `RAW_SCHOLARSHIPS[i]` is typed as possibly undefined under `noUncheckedIndexedAccess`,
+ * and these indexes are fixed and asserted by the record-count check in
+ * `scripts/verify-explorer.ts`. Throwing here turns a silent bad preview into a
+ * loud build failure.
+ */
+function requireRecord(scholarship: Scholarship | undefined): Scholarship {
+  if (scholarship === undefined) {
+    throw new Error("Demo record missing: RAW_SCHOLARSHIPS is shorter than the homepage fixtures expect.");
+  }
+  return scholarship;
+}
 
 export const featureBlocks: readonly FeatureBlock[] = [
   {

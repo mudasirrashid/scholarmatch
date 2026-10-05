@@ -121,8 +121,14 @@ export function SiteHeader() {
               conversion section. "Get Started" points at the explorer on routes
               that have no conversion section of their own.
             */}
-            <Button href={onHomepage ? "#final-cta" : "/scholarships"} variant="ghost" size="sm">
-              Sign In
+            {/*
+              Authentication does not exist yet, so this targets the profile
+              builder: it is the closest thing to a personalised entry point, and
+              it is where a visitor's own answers would live once accounts
+              arrive.
+            */}
+            <Button href="/profile" variant="ghost" size="sm">
+              My Profile
             </Button>
             <Button href={primaryHref} variant="secondary" size="sm">
               Get Started
@@ -170,12 +176,8 @@ export function SiteHeader() {
             </ul>
 
             <div className="flex flex-col gap-2.5 pt-5 pb-2">
-              <Button
-                href={onHomepage ? "#final-cta" : "/scholarships"}
-                variant="secondary"
-                size="md"
-              >
-                Sign In
+              <Button href="/profile" variant="secondary" size="md">
+                My Profile
               </Button>
               <Button href={primaryHref} variant="primary" size="md">
                 Get Started

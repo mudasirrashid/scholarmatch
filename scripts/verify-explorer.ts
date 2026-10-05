@@ -1,12 +1,32 @@
-import { allScholarships, toPreview } from "@/lib/scholarships";
+import { activeDemoProfile } from "@/lib/demo/student-profiles";
+import { toPreviewFromMatch } from "@/lib/scholarships";
+import { allScholarships } from "@/lib/scholarships";
 import {
   DEFAULT_QUERY,
   parseQuery,
   queryToParams,
   runQuery,
+  type MatchLookup,
 } from "@/lib/scholarships/query";
 
 const all = allScholarships();
+
+/**
+ * Scores a record the way the explorer does, so this script checks the same
+ * numbers the page renders rather than a separate fixture.
+ */
+const lookup: MatchLookup = (scholarship) => {
+  const preview = toPreviewFromMatch(scholarship, activeDemoProfile);
+  return {
+    score: preview.matchScore,
+    summary: "",
+    breakdown: [],
+    missingRequirements: [],
+    strengths: [],
+    warnings: [],
+  };
+};
+
 let failures = 0;
 
 function check(label: string, actual: unknown, expected: unknown) {
@@ -37,7 +57,7 @@ check("round trip is lossless", roundTrip, multi);
 /* 4. "No language test" is a real filter member, not a dropped sentinel. */
 const noTest = parseQuery({ lang: "none" });
 check("lang=none parses", noTest.language, ["none"]);
-const noneResults = runQuery(all, noTest);
+const noneResults = runQuery(all, noTest, lookup);
 check(
   "lang=none returns only records with no test listed",
   noneResults.every((s) => s.languageTests.length === 0),
@@ -46,7 +66,7 @@ check(
 check("lang=none returns a non-empty set", noneResults.length > 0, true);
 
 /* 5. A real test still filters to records requiring it. */
-const ielts = runQuery(all, parseQuery({ lang: "ielts" }));
+const ielts = runQuery(all, parseQuery({ lang: "ielts" }), lookup);
 check(
   "lang=ielts returns only records accepting IELTS",
   ielts.every((s) => s.languageTests.includes("ielts")),
@@ -58,10 +78,10 @@ const junk = parseQuery({ degree: "martian,underwater%20basket%20weaving" });
 check("unknown degree values rejected", junk.degree, []);
 
 /* 7. Empty query returns the full dataset. */
-check("default query returns all", runQuery(all, DEFAULT_QUERY).length, all.length);
+check("default query returns all", runQuery(all, DEFAULT_QUERY, lookup).length, all.length);
 
 /* 8. Every preview card carries the fields and exact deadline the card renders. */
-const previews = all.map(toPreview);
+const previews = all.map((scholarship) => toPreviewFromMatch(scholarship, activeDemoProfile));
 check(
   "every preview has a field",
   previews.every((p) => Array.isArray(p.fields) && p.fields.length > 0),
@@ -78,17 +98,15 @@ check("record count is 8-12", all.length >= 8 && all.length <= 12, true);
 console.log(`      (actual: ${all.length})`);
 
 /* 10. A no-match query yields zero, which is what the empty state renders. */
-const impossible = runQuery(all, {
-  ...DEFAULT_QUERY,
-  countries: ["atlantis"],
-});
+const impossible = runQuery(all, { ...DEFAULT_QUERY, countries: ["atlantis"] }, lookup);
 check("impossible country yields zero", impossible.length, 0);
 
 /* 11. Sort orders are total and stable. */
 for (const sort of ["best_match", "deadline_soon", "newest", "fully_funded", "relevant"] as const) {
-  const result = runQuery(all, { ...DEFAULT_QUERY, sort });
+  const result = runQuery(all, { ...DEFAULT_QUERY, sort }, lookup);
   check(`sort=${sort} returns all`, result.length, all.length);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
+

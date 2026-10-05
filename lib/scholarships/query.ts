@@ -17,6 +17,7 @@ import type {
   GpaRequirement,
   LanguageFilter,
   LanguageTest,
+  MatchInsights,
   Scholarship,
   SortKey,
 } from "@/types/scholarship";
@@ -284,15 +285,26 @@ export function filterScholarships(
 }
 
 /**
+ * Resolves the engine output for a record.
+ *
+ * Sorting by match score needs the score, and since Phase 03 the score no longer
+ * lives on the record. Rather than let this module import the engine, callers
+ * pass a lookup. The explorer passes one backed by `activeDemoProfile`, so its
+ * ordering and its cards are scored identically.
+ */
+export type MatchLookup = (scholarship: Scholarship) => MatchInsights;
+
+/**
  * Orders results.
  *
- * `best_match` and `relevant` both follow the demo score, but differ in
+ * `best_match` and `relevant` both follow the engine score, but differ in
  * intent: relevance additionally rewards a clean score with no open warnings,
  * which is the ordering a student browsing rather than searching wants.
  */
 export function sortScholarships(
   scholarships: readonly Scholarship[],
   sort: SortKey,
+  lookup: MatchLookup,
 ): Scholarship[] {
   const sorted = [...scholarships];
 
@@ -312,32 +324,33 @@ export function sortScholarships(
         const rank = (record: Scholarship) => FUNDING_TIERS.indexOf(record.funding);
         const delta = rank(a) - rank(b);
         // Ties fall back to score so the ordering stays deterministic.
-        return delta !== 0 ? delta : b.match.score - a.match.score;
+        return delta !== 0 ? delta : lookup(b).score - lookup(a).score;
       });
 
     case "relevant":
-      return sorted.sort((a, b) => relevance(a) - relevance(b));
+      return sorted.sort((a, b) => relevance(a, lookup) - relevance(b, lookup));
 
     case "best_match":
     default:
       return sorted.sort((a, b) => {
-        const delta = b.match.score - a.match.score;
+        const delta = lookup(b).score - lookup(a).score;
         return delta !== 0 ? delta : new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
       });
   }
 }
 
 /** Higher is better: score, discounted for outstanding warnings. */
-function relevance(scholarship: Scholarship): number {
-  return scholarship.match.score - scholarship.match.warnings.length * 4;
+function relevance(scholarship: Scholarship, lookup: MatchLookup): number {
+  return lookup(scholarship).score - lookup(scholarship).warnings.length * 4;
 }
 
 /** Filters then sorts, the single entry point the explorer page uses. */
 export function runQuery(
   scholarships: readonly Scholarship[],
   query: ExplorerQuery,
+  lookup: MatchLookup,
 ): Scholarship[] {
-  return sortScholarships(filterScholarships(scholarships, query), query.sort);
+  return sortScholarships(filterScholarships(scholarships, query), query.sort, lookup);
 }
 
 /** True when a record advertises the no-language-test option. */

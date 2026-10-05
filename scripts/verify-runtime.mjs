@@ -198,5 +198,22 @@ check(
   true,
 );
 
+/*
+ * The profile route is new, so assert what a server can actually promise about
+ * it: it resolves, it is in the sitemap, and its metadata is complete. The wizard
+ * itself is client-state and is covered by the a11y audit instead.
+ */
+console.log("\n--- profile route ---");
+const profile = await get("/profile");
+check("profile returns 200", profile.status, 200);
+check("profile has a canonical url", profile.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/profile"'), true);
+check("profile has a meta description", /<meta name="description" content="[^"]{40,}"/.test(profile.html), true);
+check("profile discloses that storage is browser-local", /this browser only/i.test(profile.html), true);
+check(
+  "profile does not leak a personalised score into server HTML",
+  /match score of \d+/.test(profile.html),
+  false,
+);
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

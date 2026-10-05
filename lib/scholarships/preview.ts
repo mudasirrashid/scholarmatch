@@ -5,6 +5,7 @@
  * helpers need it, and importing it from the read helpers would create a cycle.
  */
 
+import { matchScholarship, toMatchInsights } from "@/lib/matching";
 import { QUERY_REFERENCE_DATE } from "@/lib/scholarships/query";
 import type {
   EligibilityStatus,
@@ -13,6 +14,7 @@ import type {
   Scholarship,
   ScholarshipPreview,
 } from "@/types/scholarship";
+import type { StudentProfile } from "@/types/student";
 
 /** Whole days from the shared reference date until the deadline. */
 export function daysUntil(deadline: string): number {
@@ -70,13 +72,21 @@ function toFactors(match: MatchInsights): ScholarshipPreview["factors"] {
 }
 
 /**
- * Projects a full record onto the compact shape cards render.
+ * Projects a full record plus its match onto the compact shape cards render.
  *
- * Phase 01 authored `deadlineInDays` and `factors` by hand in its fixture. Both
- * are computed here instead so the explorer grid, the homepage showcase and the
- * detail hero can never disagree about the same opportunity.
+ * Phase 01 authored `deadlineInDays` and `factors` by hand in its fixture, and
+ * Phase 02 took the match score straight off the record. Both are now computed:
+ * `deadlineInDays` from the shared reference date, and the score from the
+ * matching engine via the `match` argument.
+ *
+ * `match` is a required parameter on purpose. It means no caller can reach for
+ * a record and accidentally render a score the engine never produced, which is
+ * exactly how Phase 02's list and detail pages came to disagree.
  */
-export function toPreview(scholarship: Scholarship): ScholarshipPreview {
+export function toPreview(
+  scholarship: Scholarship,
+  match: MatchInsights,
+): ScholarshipPreview {
   return {
     id: scholarship.id,
     title: scholarship.title,
@@ -90,24 +100,35 @@ export function toPreview(scholarship: Scholarship): ScholarshipPreview {
     fundingLabel: scholarship.fundingLabel,
     deadline: scholarship.deadline,
     deadlineInDays: daysUntil(scholarship.deadline),
-    matchScore: scholarship.match.score,
+    matchScore: match.score,
     tags: scholarship.tags,
-    factors: toFactors(scholarship.match),
-    reasons: scholarship.match.strengths.map((label, index) => ({
+    factors: toFactors(match),
+    reasons: match.strengths.map((label, index) => ({
       id: `${scholarship.id}-strength-${index}`,
       label,
     })),
     requirements: [
-      ...scholarship.match.missingRequirements.map((label, index) => ({
+      ...match.missingRequirements.map((label, index) => ({
         id: `${scholarship.id}-missing-${index}`,
         label,
         hint: "Worth completing before you invest time in this application.",
       })),
-      ...scholarship.match.warnings.map((label, index) => ({
+      ...match.warnings.map((label, index) => ({
         id: `${scholarship.id}-warning-${index}`,
         label,
         hint: "Worth reviewing before you invest time in this application.",
       })),
     ],
   };
+}
+
+/**
+ * Convenience wrapper for callers holding a `MatchResult` rather than the
+ * flattened `MatchInsights`, keeping the engine import out of every page.
+ */
+export function toPreviewFromMatch(
+  scholarship: Scholarship,
+  profile: StudentProfile,
+): ScholarshipPreview {
+  return toPreview(scholarship, toMatchInsights(matchScholarship(profile, scholarship)));
 }

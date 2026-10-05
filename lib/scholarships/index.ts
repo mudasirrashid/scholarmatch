@@ -4,13 +4,17 @@
  * The explorer needs a compact projection for cards while the detail page
  * needs the whole record, so `toPreview` (in `./preview`) is the single place
  * that narrows a full record for Phase 01's `ScholarshipPreview` consumers.
+ *
+ * Since Phase 03 the projection takes the match from `lib/matching` rather than
+ * reading it off the record, so the score on a card, the score on a detail page
+ * and the score used for ranking are all the same computation.
  */
 
 import { scholarships } from "@/lib/demo/data";
 import { deadlineWindow } from "@/lib/scholarships/query";
 import type { DegreeFilter } from "@/types/scholarship";
 
-export { daysUntil, scoreForStatus, toPreview } from "@/lib/scholarships/preview";
+export { daysUntil, scoreForStatus, toPreview, toPreviewFromMatch } from "@/lib/scholarships/preview";
 
 /** Every record, in authored order. */
 export function allScholarships() {

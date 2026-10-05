@@ -9,13 +9,21 @@ import { ScholarshipGridSkeleton } from "@/components/scholarships/scholarship-c
 import { AmbientField } from "@/components/ui/ambient-field";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/badge";
+import { activeDemoProfile } from "@/lib/demo/student-profiles";
+import { matchScholarship, toMatchInsights } from "@/lib/matching";
 import {
   availableCountries,
   availableFields,
   allScholarships,
   toPreview,
 } from "@/lib/scholarships";
-import { parseQuery, runQuery, type RawSearchParams } from "@/lib/scholarships/query";
+import {
+  parseQuery,
+  runQuery,
+  type MatchLookup,
+  type RawSearchParams,
+} from "@/lib/scholarships/query";
+import type { MatchInsights } from "@/types/scholarship";
 
 const DESCRIPTION =
   "Search and filter scholarship opportunities by degree, field, country and funding. Every entry shows its match strength and the requirements you still need to meet.";
@@ -37,6 +45,11 @@ export const metadata: Metadata = {
  * Filtering happens on the server from the URL, so the full result set is
  * present in the initial HTML: the page is usable and indexable before any
  * JavaScript executes, and a shared URL always reproduces the same view.
+ *
+ * Each card's match score comes from the engine in `lib/matching`, evaluated
+ * against `activeDemoProfile`. The detail page evaluates the same record with
+ * the same function, so the number a student taps through to always matches the
+ * number they tapped.
  */
 export default async function ScholarshipsPage({
   searchParams,
@@ -47,7 +60,20 @@ export default async function ScholarshipsPage({
   const query = parseQuery(params);
 
   const all = allScholarships();
-  const results = runQuery(all, query);
+
+  // One lookup, shared by the sort and the cards, so ordering and rendering
+  // cannot disagree about a score. Memoised because `runQuery` calls it
+  // repeatedly while sorting.
+  const lookupCache = new Map<string, MatchInsights>();
+  const lookup: MatchLookup = (scholarship) => {
+    const cached = lookupCache.get(scholarship.id);
+    if (cached !== undefined) return cached;
+    const insights = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
+    lookupCache.set(scholarship.id, insights);
+    return insights;
+  };
+
+  const results = runQuery(all, query, lookup);
 
   const fields = availableFields();
   const countries = availableCountries();
@@ -82,7 +108,7 @@ export default async function ScholarshipsPage({
                 {results.map((scholarship, index) => (
                   <li key={scholarship.id} className="h-full min-w-0">
                     <ScholarshipCard
-                      scholarship={toPreview(scholarship)}
+                      scholarship={toPreview(scholarship, lookup(scholarship))}
                       href={`/scholarships/${scholarship.id}`}
                       priority={index < 3}
                     />

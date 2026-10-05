@@ -26,6 +26,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      // The builder itself, not the profile a visitor builds: the page has no
+      // per-user content to index and reads as thin on its own.
+      url: `${SITE_URL}/profile`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
     ...allScholarships().map((scholarship) => ({
       url: `${SITE_URL}/scholarships/${scholarship.id}`,
       // The dataset carries a real publication date per record, so crawlers see
