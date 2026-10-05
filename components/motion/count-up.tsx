@@ -22,6 +22,13 @@ const easeOutExpo = (t: number): number => (t === 1 ? 1 : 1 - Math.pow(2, -10 * 
  * Respects `prefers-reduced-motion` by rendering the final value immediately.
  * The render loop is driven by `requestAnimationFrame` and always cancels its
  * own frame on unmount.
+ *
+ * The animated figure starts at zero, so on its own it would publish `0` to any
+ * render that never runs the animation — which is what made the detail hero read
+ * "0% match" while the explorer's card, being static text, read "96%". The
+ * `<noscript>` sibling carries the real number and is inert in exactly the
+ * browsers that need it, so the value is correct whether or not JavaScript runs
+ * and the count-up is untouched for everyone else.
  */
 export function CountUp({
   value,
@@ -97,8 +104,11 @@ export function CountUp({
   const formatted = display.toFixed(decimals);
 
   return (
-    <span ref={elementRef} className={className}>
-      {formatted}
+    <span className={className}>
+      <span ref={elementRef} data-count="">
+        {formatted}
+      </span>
+      <noscript>{value.toFixed(decimals)}</noscript>
     </span>
   );
 }

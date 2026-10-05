@@ -463,9 +463,27 @@
   transform: scaleY(1);
 }
 
-/* Animated conic match ring. */
+/* Count-up figures ------------------------------------------------------
+   The animated number is meaningless without JavaScript, so it is hidden
+   there and the component's <noscript> fallback carries the real value. This is
+   the same `.js` scoping the reveal system uses: the script-free render shows
+   correct data rather than a stranded zero. */
+[data-count] {
+  display: none;
+}
+
+.js [data-count] {
+  display: inline;
+}
+
+/* Animated conic match ring.
+
+   The base rule reads the inline `--ring-target` so the arc renders the real
+   score whenever JavaScript does not run. The `.js` rules below are what start
+   it at zero and animate it up, so progressive enhancement never decides
+   whether the ring shows the true value or an empty track. */
 [data-ring] {
-  --ring-progress: 0;
+  --ring-progress: var(--ring-target, 0);
   background: conic-gradient(
     from -90deg,
     var(--color-azure-400) 0deg,
