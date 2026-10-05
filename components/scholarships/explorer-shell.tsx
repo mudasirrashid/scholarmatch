@@ -58,7 +58,12 @@ export function ExplorerShell({
 
       {/* Results */}
       <Container size="wide" className="py-8 lg:py-10">
-        <div className="flex gap-8">
+        {/*
+          Stacked below `lg`, where the filter panel is a full-width trigger
+          above the results. As a row it sat *beside* them, squeezing the grid
+          into a fraction of the viewport and pushing cards off the right edge.
+        */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           <FilterPanel
             query={query}
             onChange={onFilterChange}

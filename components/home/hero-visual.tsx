@@ -176,9 +176,16 @@ export function HeroVisual() {
           </div>
         </div>
 
+        {/*
+            Raised on small screens to open a gap between this chip and the
+            caption below. The chip is animated on two axes at once — a
+            scroll-linked parallax offset plus the looping drift — worth ~56px
+            of downward travel, which a percentage offset alone cannot absorb
+            because the travel is a constant while the box height scales.
+          */}
         <div
           data-parallax-speed="-34"
-          className="absolute bottom-[6%] left-[2%] sm:left-[6%] lg:left-0 lg:bottom-[14%]"
+          className="absolute bottom-[12%] left-[2%] sm:bottom-[8%] sm:left-[6%] lg:bottom-[14%] lg:left-0"
         >
           <div className="animate-drift-slow" style={{ animationDelay: "-3.2s" }}>
             <div className="surface-glass edge-highlight inline-flex items-center gap-2 rounded-full py-2 pr-4 pl-3">
@@ -194,7 +201,16 @@ export function HeroVisual() {
         </div>
 
         {/* --- Transparency marker -------------------------------------- */}
-        <p className="label-micro absolute inset-x-0 -bottom-1 text-center text-mist-600 lg:-bottom-6">
+        {/*
+            The chip below is animated on two axes at once — a scroll-linked
+            parallax offset plus the looping drift, together worth ~56px of
+            downward travel. On small screens the fixed aspect ratio leaves less
+            height than that, so a caption sitting at the box's own bottom edge
+            is guaranteed to be overrun. It is therefore parked a fixed distance
+            *below* the box on mobile, which clears the travel regardless of how
+            tall the box ends up. Desktop restores the original placement.
+          */}
+        <p className="label-micro absolute inset-x-0 -bottom-16 text-center text-balance text-mist-600 lg:-bottom-6">
           Interface preview — sample data
         </p>
       </div>

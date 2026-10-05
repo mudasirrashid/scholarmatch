@@ -35,7 +35,7 @@ export function OpportunitiesShowcase() {
         </div>
 
         <RevealGroup
-          className="mt-14 grid gap-5 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3"
+          className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3"
           baseDelay={100}
           step={110}
         >

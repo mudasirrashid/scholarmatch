@@ -78,9 +78,9 @@ export default async function ScholarshipsPage({
         >
           <Suspense fallback={<ScholarshipGridSkeleton />}>
             {results.length > 0 ? (
-              <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {results.map((scholarship, index) => (
-                  <li key={scholarship.id} className="h-full">
+                  <li key={scholarship.id} className="h-full min-w-0">
                     <ScholarshipCard
                       scholarship={toPreview(scholarship)}
                       href={`/scholarships/${scholarship.id}`}
