@@ -34,6 +34,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    {
+      // The personalised route. The shell and its explanation are server
+      // rendered, so it is indexable, but a visitor with no stored profile only
+      // ever sees the onboarding state, hence the low priority.
+      url: `${SITE_URL}/matches`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
     ...allScholarships().map((scholarship) => ({
       url: `${SITE_URL}/scholarships/${scholarship.id}`,
       // The dataset carries a real publication date per record, so crawlers see

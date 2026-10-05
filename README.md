@@ -61,13 +61,37 @@ lib/matching/        The engine. Pure and deterministic.
   eligibility.ts       Rules; return data, perform no scoring.
   engine.ts            Dimension evaluation, scoring, explanations.
   rank.ts              Eligibility-first ordering.
-lib/profile/         Stored-profile validation.
+  recommendations.ts   Groups a finished ranking into display bands. Scores
+                       nothing.
+lib/profile/         Stored-profile validation and completion. Completion
+                     counts only the fields the engine reads.
 lib/demo/             Twelve illustrative scholarship records and six demo
                       profiles. The data is invented and labelled as such
                       everywhere it surfaces.
 scripts/             Verification. See below.
 types/               Data contracts.
 ```
+
+## Personalised matches
+
+`/matches` ranks the whole collection against the profile a visitor saved in
+`/profile`, then groups the result into bands: strong, good, potential, and not
+eligible yet. Nothing on that page scores anything — `rankScholarships` produces
+the order, `groupRecommendations` reshapes that order, and the existing card and
+breakdown components render the output through the same `toMatchInsights` seam
+the explorer uses.
+
+It is a client island for the same reason `/profile` is: the ranking is a function
+of `localStorage`, which the server cannot read. The server still sends the
+heading, the provenance disclosure and the metadata, and it asserts in
+`verify:a11y` that no ranked list or completion percentage leaks into the response
+body.
+
+Completion is measured by `lib/profile/completion.ts` rather than read off a
+score. It counts the fields the engine acts on, weights the three hard dimensions
+highest, and reports the specific unanswered fields holding the ranking back, so
+the percentage a student sees always corresponds to something that would sharpen
+their results.
 
 ## Verification
 
@@ -83,7 +107,7 @@ npm run verify:all     # the above plus a11y and runtime, against a live server
 | Script | Checks |
 | --- | --- |
 | `verify:query` | URL filtering, sorting, and that filters work without JavaScript |
-| `verify:matching` | Score determinism and bounds, hard-failure capping, unknown-is-not-none, work authorisation, degree ordering, stored-profile validation |
+| `verify:matching` | Score determinism and bounds, hard-failure capping, unknown-is-not-none, work authorisation, degree ordering, stored-profile validation, profile completion and personalisation |
 | `verify:a11y` | Landmarks, heading order, form labels, control names, over served HTML |
 | `verify:runtime` | Routes, metadata, canonicals, sitemap, URL state |
 
@@ -95,7 +119,8 @@ npm run build && npm start -- -p 3111
 
 ## Current scope
 
-Built: profile builder, matching engine, explorer, detail pages, bookmarking.
+Built: profile builder, matching engine, personalised matches, explorer, detail
+pages, bookmarking.
 
 Not built, and deliberately out of scope so far: accounts, a database, server-side
 profile persistence, applications, payments, notifications, admin tooling.
@@ -103,8 +128,9 @@ profile persistence, applications, payments, notifications, admin tooling.
 **Profiles live in `localStorage`.** Explorer and detail pages therefore score
 against a demo profile rather than the visitor's own — `localStorage` is
 invisible during server rendering, and reading it would make hydration disagree
-with the server HTML. Making stored profiles drive those pages needs an API and
-belongs to a later phase.
+with the server HTML. `/matches` is where a stored profile drives the ranking;
+making the explorer and detail pages personalised needs an API and belongs to a
+later phase.
 
 ## Development
 

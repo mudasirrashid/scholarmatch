@@ -40,6 +40,18 @@ interface ProfileContextValue {
    */
   isHydrated: boolean;
   /**
+   * True when a stored profile exists but could not be parsed.
+   *
+   * `parseProfile` rejects an unknown schema version and any section that fails
+   * validation, so this covers hand-edited storage as well as data left behind
+   * by a different build. It is reported separately from an absent key because
+   * the two need different copy: onboarding versus a recovery prompt.
+   *
+   * Nothing is silently overwritten. The stored value is left untouched until the
+   * visitor chooses to rebuild it.
+   */
+  isUnreadable: boolean;
+  /**
    * Merges a patch into the profile and persists it.
    *
    * A merge rather than a replacement so one field can be cleared without having
@@ -63,35 +75,69 @@ const ProfileContext = createContext<ProfileContextValue | null>(null);
  * a visitor with corrupt storage should see the builder, not a crash.
  */
 
+/** What one read of storage produced. */
+interface ProfileSnapshot {
+  /** Raw string behind the key, or `null` when the key is absent. */
+  raw: string | null;
+  /** Parsed profile, or `null` when absent or unparseable. */
+  profile: StudentProfile | null;
+}
+
 /**
  * `getSnapshot` must be referentially stable for unchanged data, so the parsed
  * object is cached against the raw stored string.
  */
 let cachedRaw: string | null = null;
 let cachedProfile: StudentProfile | null = null;
+let cachedSnapshot: ProfileSnapshot = { raw: null, profile: null };
 
-/** `undefined` means "not read yet", which is what drives `isHydrated`. */
-function getSnapshot(): StudentProfile | undefined {
+/**
+ * The server has no stored profile, so it always reports the key as absent.
+ *
+ * Frozen and shared by identity: `isHydrated` is decided by comparing snapshots
+ * against this one, which is why it must be the same object every call.
+ */
+const SERVER_SNAPSHOT: ProfileSnapshot = Object.freeze({
+  raw: null,
+  profile: null,
+});
+
+/**
+ * Same idea for storage that cannot be read at all.
+ *
+ * A separate constant rather than a fresh object, because `getSnapshot` is called
+ * on every render and `useSyncExternalStore` requires a stable reference for
+ * unchanged data: allocating here would loop forever when storage is blocked.
+ */
+const BLOCKED_STORAGE_SNAPSHOT: ProfileSnapshot = Object.freeze({
+  raw: null,
+  profile: null,
+});
+
+/** `undefined` is not possible here: absence is represented as `raw: null`. */
+function getSnapshot(): ProfileSnapshot {
   let raw: string | null = null;
 
   try {
     raw = window.localStorage.getItem(STORAGE_KEY);
   } catch {
-    // Private browsing and blocked storage both throw. Treat as no profile.
-    return cachedProfile ?? undefined;
+    // Private browsing and blocked storage both throw. Treated as "no profile",
+    // but marked as read so the UI leaves its loading state instead of spinning.
+    return BLOCKED_STORAGE_SNAPSHOT;
   }
 
   if (raw !== cachedRaw) {
     cachedRaw = raw;
     cachedProfile = parseStoredProfile(raw);
+    cachedSnapshot = { raw, profile: cachedProfile };
   }
 
-  return cachedProfile ?? undefined;
+  return cachedSnapshot;
 }
 
 /** The server never has a stored profile, so it always renders the empty one. */
-function getServerSnapshot(): StudentProfile | undefined {
-  return undefined;
+function getServerSnapshot(): ProfileSnapshot {
+  return SERVER_SNAPSHOT;
 }
 
 /** Same-tab subscribers, since `storage` only fires in *other* tabs. */
@@ -123,6 +169,7 @@ function write(profile: StudentProfile): void {
 
   cachedRaw = raw;
   cachedProfile = profile;
+  cachedSnapshot = { raw, profile };
   notify();
 }
 
@@ -130,7 +177,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const update = useCallback((patch: Partial<StudentProfile>) => {
-    const current = getSnapshot() ?? DEFAULT_PROFILE;
+    const current = getSnapshot().profile ?? DEFAULT_PROFILE;
     write({ ...current, ...patch, schemaVersion: 1 });
   }, []);
 
@@ -146,13 +193,19 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }
     cachedRaw = null;
     cachedProfile = null;
+    cachedSnapshot = { raw: null, profile: null };
     notify();
   }, []);
 
   const value = useMemo<ProfileContextValue>(
     () => ({
-      profile: stored ?? DEFAULT_PROFILE,
-      isHydrated: stored !== undefined,
+      profile: stored.profile ?? DEFAULT_PROFILE,
+      // Identity comparison against the frozen server snapshot. An absent key
+      // still counts as hydrated: the read completed, and there is simply no
+      // profile, which callers distinguish from a corrupt one with
+      // `isUnreadable`.
+      isHydrated: stored !== SERVER_SNAPSHOT,
+      isUnreadable: stored.raw !== null && stored.profile === null,
       update,
       replace,
       clear,

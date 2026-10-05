@@ -14,6 +14,7 @@ export {
   TOTAL_DIMENSION_WEIGHT,
 } from "@/lib/matching/engine";
 export { rankScholarships, topMatches } from "@/lib/matching/rank";
+export { groupRecommendations } from "@/lib/matching/recommendations";
 export {
   ACADEMIC_SCALE_CEILING,
   ACADEMIC_SCALE_FLOOR,
@@ -36,6 +37,7 @@ export { knownFields, isKnownField, relateFields, relateToFields } from "@/lib/m
 export { languageTestLabel } from "@/lib/matching/eligibility";
 
 export type { FieldRelation } from "@/lib/matching/fields";
+export type { RecommendationBand, RecommendationBandId, RecommendationGroups } from "@/lib/matching/recommendations";
 export type {
   AcademicVerdict,
   DegreeVerdict,

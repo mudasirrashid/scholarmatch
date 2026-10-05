@@ -94,26 +94,41 @@ export function MatchPanel({
         ))}
       </ol>
 
-      <Link
-        href="/scholarships"
-        className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-mist-200 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
-      >
-        Explore all {results.length} opportunities
-        <svg
-          className="size-3.5"
-          viewBox="0 0 12 12"
-          fill="none"
-          aria-hidden="true"
+      {/*
+        Two destinations, deliberately: `/matches` is the personalised route
+        built from these stored answers, while the explorer is the full
+        filterable collection. Merging them would blur a ranking the student
+        cannot change with one they can.
+      */}
+      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <Link
+          href="/matches"
+          className="inline-flex items-center gap-2 text-sm font-medium text-mist-100 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
         >
-          <path
-            d="M2.5 6h7M6.5 3l3 3-3 3"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </Link>
+          See my matches
+          <svg
+            className="size-3.5"
+            viewBox="0 0 12 12"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M2.5 6h7M6.5 3l3 3-3 3"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
+
+        <Link
+          href="/scholarships"
+          className="text-sm text-mist-400 transition-colors duration-200 hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+        >
+          Explore all {results.length} opportunities
+        </Link>
+      </div>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   MATCH_QUALITY_THRESHOLDS,
   TOTAL_DIMENSION_WEIGHT,
   evaluationCoverage,
+  groupRecommendations,
   matchQuality,
   matchScholarship,
   rankScholarships,
@@ -25,8 +26,9 @@ import {
 } from "@/lib/matching";
 import { evaluateDegree, evaluateNationality, evaluateWorkAuthorization } from "@/lib/matching/eligibility";
 import { relateFields, relateToFields } from "@/lib/matching/fields";
+import { isProvisional, profileCompletion } from "@/lib/profile/completion";
 import { parseProfile, parseStoredProfile } from "@/lib/profile/parse";
-import { allScholarships } from "@/lib/scholarships";
+import { allScholarships, toPreview } from "@/lib/scholarships";
 import { toPreviewFromMatch } from "@/lib/scholarships";
 import {
   activeDemoProfile,
@@ -837,6 +839,173 @@ check(
   parseProfile({ schemaVersion: 1, eligibility: { languages: [{ language: "English" }] } })?.eligibility
     ?.languages,
   [],
+);
+
+/* ==========================================================================
+   17. Personalisation
+   ========================================================================== */
+
+section("Personalisation");
+
+const emptyCompletion = profileCompletion({ schemaVersion: 1 });
+check("an empty profile is 0% complete", emptyCompletion.percent, 0);
+check("an empty profile answers no fields", emptyCompletion.answeredCount, 0);
+check("an empty profile is never meaningful", emptyCompletion.isMeaningful, false);
+check("an empty profile is provisional", isProvisional(emptyCompletion), true);
+check("an empty profile lists every gap", emptyCompletion.gaps.length, emptyCompletion.fieldCount);
+
+const completionA = profileCompletion(profileA);
+check("profile A is fully complete", completionA.percent, 100);
+check("profile A is meaningful", completionA.isMeaningful, true);
+check("profile A has no gaps left", completionA.gaps.length, 0);
+
+const completionB = profileCompletion(profileB);
+check(
+  "profile B is incomplete and flagged as not meaningful",
+  [completionB.percent < completionA.percent, completionB.isMeaningful],
+  [true, false],
+);
+check("profile B is provisional", isProvisional(completionB), true);
+check(
+  "gaps are ordered by impact",
+  completionB.gaps.every(
+    (gap, index) => index === 0 || completionB.gaps[index - 1]!.weight >= gap.weight,
+  ),
+  true,
+);
+check(
+  "the top gap is a hard-dimension field",
+  ["currentDegree", "gpa", "citizenship", "workAuthorization"].includes(completionB.gaps[0]!.id),
+  true,
+);
+check("zero years of experience counts as answered", completionA.fields.length, 12);
+check(
+  "an explicit zero is an answered field",
+  profileCompletion({
+    schemaVersion: 1,
+    experience: { workExperienceYears: 0 },
+  }).fields.find((field) => field.id === "workExperienceYears")?.isAnswered,
+  true,
+);
+check(
+  "an unrecognised field of study does not count as answered",
+  profileCompletion({
+    schemaVersion: 1,
+    academic: { fieldOfStudy: "Interpretive Dance" },
+  }).fields.find((field) => field.id === "fieldOfStudy")?.isAnswered,
+  false,
+);
+check(
+  "completion is a pure function of the profile",
+  [profileCompletion(profileA).percent, profileCompletion(profileA).percent],
+  [completionA.percent, completionA.percent],
+);
+
+/*
+  The point of Phase 04 is that the ranking answers the profile, so the strongest
+  result has to actually differ between students. Two profiles that agree on
+  everything else would hide a ranking that ignores the profile entirely.
+*/
+const orderA = rankScholarships(profileA, all).map((entry) => entry.scholarship.id);
+const orderD = rankScholarships(profileD, all).map((entry) => entry.scholarship.id);
+const orderE = rankScholarships(profileE, all).map((entry) => entry.scholarship.id);
+
+check("A and D rank the collection differently", orderA[0] === orderD[0], false);
+check("D and E rank the collection differently", orderD[0] === orderE[0], false);
+check(
+  "profile D's top result is a medicine or health opportunity",
+  rankScholarships(profileD, all)[0]!.scholarship.fields.some((field) =>
+    field.toLowerCase().includes("medic") || field.toLowerCase().includes("health"),
+  ),
+  true,
+);
+/*
+  Profile C clears the floors of some awards and not others, so the point is not
+  that its whole ranking is blocked but that the awards it fails are ranked last
+  and stay capped.
+*/
+const rankedC = rankScholarships(profileC, all);
+const blockedC = rankedC.filter((entry) => !entry.match.eligibility.isEligible);
+check("profile C is blocked from at least one award", blockedC.length > 0, true);
+check(
+  "profile C's blocked results are capped and named",
+  blockedC.every((entry) => entry.match.score <= 45 && entry.match.eligibility.hardFailures.length > 0),
+  true,
+);
+check(
+  "profile C's blocked results all rank last",
+  rankedC.slice(rankedC.length - blockedC.length).every((entry) => !entry.match.eligibility.isEligible),
+  true,
+);
+
+for (const profile of demoProfiles) {
+  const ranked = rankScholarships(profile, all);
+  const groups = groupRecommendations(ranked);
+
+  const eligibleFlags = ranked.map((entry) => entry.match.eligibility.isEligible);
+  const firstBlocked = eligibleFlags.lastIndexOf(false);
+  const lastEligible = eligibleFlags.lastIndexOf(true);
+
+  check(
+    `${profile.displayName}: eligible results all rank above blocked ones`,
+    firstBlocked === -1 || firstBlocked > lastEligible,
+    true,
+  );
+  check(
+    `${profile.displayName}: scores never increase along the ranking`,
+    ranked.every((entry, index) => index === 0 || ranked[index - 1]!.match.score >= entry.match.score),
+    true,
+  );
+  check(
+    `${profile.displayName}: bands partition the ranking with no duplicates`,
+    groups.bands.reduce((sum, band) => sum + band.entries.length, 0) === ranked.length &&
+      new Set(groups.bands.flatMap((band) => band.entries.map((entry) => entry.scholarship.id))).size ===
+        ranked.length,
+    true,
+  );
+  check(
+    `${profile.displayName}: only ineligible results land in the blocked band`,
+    groups.bands
+      .find((band) => band.id === "blocked")
+      ?.entries.every((entry) => !entry.match.eligibility.isEligible) ?? true,
+    true,
+  );
+  check(
+    `${profile.displayName}: bands are ordered strong to blocked`,
+    groups.bands.every((band, index) => {
+      if (index === 0) return true;
+      return (
+        ["strong", "good", "potential", "blocked"].indexOf(band.id) >
+        ["strong", "good", "potential", "blocked"].indexOf(groups.bands[index - 1]!.id)
+      );
+    }),
+    true,
+  );
+  check(
+    `${profile.displayName}: an ineligible result never reaches the strong band`,
+    groups.bands
+      .find((band) => band.id === "strong")
+      ?.entries.every((entry) => entry.match.eligibility.isEligible && entry.match.score >= 85) ?? true,
+    true,
+  );
+}
+
+/*
+  The personalised route renders cards through the same adapter the explorer uses,
+  so a student's card and their breakdown cannot disagree about a score.
+*/
+check(
+  "the adapter used by personalised cards agrees with the engine result",
+  all.every((scholarship) => {
+    const entry = rankScholarships(profileA, all).find(
+      (candidate) => candidate.scholarship.id === scholarship.id,
+    );
+    return (
+      entry !== undefined &&
+      toPreview(scholarship, toMatchInsights(entry.match)).matchScore === entry.match.score
+    );
+  }),
+  true,
 );
 
 /* ==========================================================================

@@ -137,7 +137,12 @@ function ProfileBuilderInner() {
               </Button>
 
               {isLast ? (
-                <Button href="/scholarships">Browse opportunities</Button>
+                <>
+                  <Button href="/matches">See my matches</Button>
+                  <Button href="/scholarships" variant="secondary">
+                    Browse opportunities
+                  </Button>
+                </>
               ) : (
                 <Button onClick={() => setStep(STEPS[index + 1]?.id ?? "review")}>
                   Continue

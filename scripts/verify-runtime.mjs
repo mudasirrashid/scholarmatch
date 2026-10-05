@@ -185,6 +185,7 @@ const sitemap = await get("/sitemap.xml");
 check("sitemap returns 200", sitemap.status, 200);
 check("sitemap lists the homepage", sitemap.html.includes("<loc>https://www.scholarmatch.me</loc>"), true);
 check("sitemap lists the explorer", sitemap.html.includes("<loc>https://www.scholarmatch.me/scholarships</loc>"), true);
+check("sitemap lists the personalised route", sitemap.html.includes("<loc>https://www.scholarmatch.me/matches</loc>"), true);
 check(
   "sitemap lists all 12 detail urls",
   (sitemap.html.match(/\/scholarships\/demo-/g) ?? []).length,
@@ -214,6 +215,33 @@ check(
   /match score of \d+/.test(profile.html),
   false,
 );
+
+/*
+ * The personalised route is new. As with the builder, what a server can promise
+ * is narrow: it resolves, it is in the sitemap, its metadata is complete, and no
+ * score derived from browser storage leaks into the response. The ranking itself
+ * is client-state and is covered by the a11y audit.
+ */
+console.log("\n--- matches route ---");
+const matches = await get("/matches");
+check("matches returns 200", matches.status, 200);
+check(
+  "matches has a canonical url",
+  matches.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/matches"'),
+  true,
+);
+check("matches has a meta description", /<meta name="description" content="[^"]{40,}"/.test(matches.html), true);
+check(
+  "matches does not leak a personalised score into server HTML",
+  /\/scholarships\/demo-/.test(matches.html),
+  false,
+);
+/*
+ * Deliberately no assertion that `/profile` links here. Both pages are client
+ * islands, so a link between them only exists after hydration and cannot be
+ * checked from a response body. Reachability is covered by the a11y audit, which
+ * fetches the routes the links point at.
+ */
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -133,6 +133,7 @@ const filtered = await audit("explorer filtered", "/scholarships?country=canada"
 await audit("detail", "/scholarships/demo-global-excellence");
 await audit("404", "/scholarships/not-a-real-id");
 await audit("profile", "/profile");
+await audit("matches", "/matches");
 
 /* Filtered views must still be complete, not a client-only shell. */
 console.log("\n--- no-JS content ---");
@@ -189,6 +190,39 @@ check(
   /<form/i.test(profile),
   false,
   "the wizard mounts client-side; server HTML must not contain a half-built form",
+);
+
+/*
+ * The personalised route is a client island, for the same reason the builder is:
+ * the ranking is a function of a profile in localStorage. Server HTML therefore
+ * cannot contain a ranked list, and these assertions are about what the server
+ * must still send — the heading, the provenance disclosure, and an honest
+ * statement that the stored profile is being read.
+ */
+console.log("\n--- personalised matches ---");
+const matches = await (await fetch(BASE + "/matches")).text();
+check("matches page has one h1", (matches.match(/<h1[^>]*>/g) ?? []).length, 1);
+check(
+  "matches page says it is reading the stored profile",
+  /reading your saved profile/i.test(matches),
+  true,
+);
+check("matches page discloses illustrative records", /illustrative/i.test(matches), true);
+check(
+  "matches page links onward to the explorer",
+  matches.includes('href="/scholarships"'),
+  true,
+);
+check(
+  "matches page does not ship a ranked list into the server HTML",
+  /\/scholarships\/demo-/.test(matches),
+  false,
+  "the ranking is derived from localStorage and must only appear after hydration",
+);
+check(
+  "matches page does not claim a completion percentage before hydration",
+  /profile is \d+% complete/i.test(matches),
+  false,
 );
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
