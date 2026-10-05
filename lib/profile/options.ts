@@ -172,6 +172,46 @@ export function parseNumber(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Whether a typed number is one the profile is allowed to store.
+ *
+ * `parseNumber` answers "is this a number", which is not the same question: `9.5`
+ * is a perfectly good number that a 4.0 GPA cannot be. The builder checks a value
+ * against its field's real scale before writing it, so an out-of-range keystroke
+ * never reaches storage.
+ *
+ * An empty string is treated as acceptable, because clearing a field is a valid
+ * answer here: it records "not answered yet" rather than a wrong value.
+ */
+export function isNumberInRange(value: string, min: number, max: number): boolean {
+  if (value.trim() === "") return true;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max;
+}
+
+/**
+ * Whether a string is a two-letter country code.
+ *
+ * Citizenship is only ever compared for equality against ISO 3166-1 alpha-2 codes
+ * in the scholarship records, so a full country name or a three-letter code can
+ * never match anything while still reading as a filled-in field. Rejecting it at
+ * entry keeps an unusable value from counting as an answer.
+ */
+export function isCountryCode(value: string): boolean {
+  return /^[A-Za-z]{2}$/.test(value.trim());
+}
+
+/** Whether a string is an ISO `YYYY-MM-DD` date the profile will accept. */
+export function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return false;
+
+  // Shape alone would accept `2027-13-45`. Confirm the date actually exists, and
+  // that it round-trips, so the value means what it says.
+  const parsed = new Date(`${value.trim()}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value.trim();
+}
+
 /** Renders an optional number for a controlled input. */
 export function numberValue(value: number | undefined): string {
   return value === undefined ? "" : String(value);

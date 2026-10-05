@@ -9,6 +9,8 @@
  * nothing here is presented as a user statistic.
  */
 
+import { parseProfile } from "@/lib/profile/parse";
+
 import type { StudentProfile } from "@/types/student";
 
 /** A strong applicant who clears every bar the demo data can express. */
@@ -186,3 +188,57 @@ export const demoProfiles = [
  * A stands in for that student and is labelled as a demo everywhere it appears.
  */
 export const activeDemoProfile: StudentProfile = profileA;
+
+/** Value comparison that ignores key order. */
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+
+  if (typeof left !== "object" || typeof right !== "object" || left === null || right === null) {
+    return false;
+  }
+
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right)) return false;
+    return (
+      left.length === right.length &&
+      left.every((entry, position) => structurallyEqual(entry, right[position]))
+    );
+  }
+
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every((key, position) => {
+      if (key !== rightKeys[position]) return false;
+      return structurallyEqual(
+        (left as Record<string, unknown>)[key],
+        (right as Record<string, unknown>)[key],
+      );
+    })
+  );
+}
+
+/**
+ * Whether a profile is one of the demos, still untouched.
+ *
+ * The profile builder needs this in two places: to avoid destroying real answers
+ * when a demo is loaded over them, and to label what is on screen, because a
+ * visitor should never be unsure whether they are looking at their own profile or
+ * at sample data.
+ *
+ * Both sides are run through `parseProfile` before comparing. A stored profile has
+ * been through it already, and the demo literals have not, so comparing them
+ * directly would fail on cosmetic differences such as empty sections being
+ * dropped, leaving Profile B permanently unrecognisable.
+ *
+ * Deliberately strict: once a demo has been edited it stops being a demo, and the
+ * page says so. That is the safe direction to be wrong in.
+ */
+export function isDemoProfile(profile: StudentProfile): boolean {
+  return demoProfiles.some((demo) => {
+    const normalised = parseProfile({ ...demo });
+    return normalised !== null && structurallyEqual(profile, normalised);
+  });
+}

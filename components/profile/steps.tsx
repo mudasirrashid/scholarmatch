@@ -4,13 +4,15 @@ import { useCallback, useMemo } from "react";
 
 import {
   CheckboxGroup,
+  DraftField,
   Field,
   RadioGroup,
   SelectInput,
   TextInput,
 } from "@/components/profile/fields";
 import { useProfile } from "@/components/profile/profile-provider";
-import { Button } from "@/components/ui/button";
+import { ConfirmAction } from "@/components/ui/confirm-action";
+import { profileCompletion } from "@/lib/profile/completion";
 import {
   COUNTRY_OPTIONS,
   DEGREE_OPTIONS,
@@ -23,6 +25,9 @@ import {
   TARGET_DEGREE_OPTIONS,
   WORK_AUTHORIZATION_OPTIONS,
   applySection,
+  isCountryCode,
+  isIsoDate,
+  isNumberInRange,
   numberValue,
   optionValue,
   parseNumber,
@@ -62,8 +67,8 @@ export function AcademicStep() {
     <div className={SECTION_CARD}>
       <h2 className={SECTION_HEADING}>Academic background</h2>
       <p className="mt-2.5 max-w-lg text-pretty text-[0.9375rem] leading-relaxed text-mist-400">
-        These four answers drive the heaviest-weighted part of your match. Leave
-        anything blank if you would rather not say yet.
+        Your academic record carries the most weight in your score. Leave anything
+        blank if you would rather not say yet.
       </p>
 
       <div className="mt-7 grid gap-6 sm:grid-cols-2">
@@ -79,26 +84,17 @@ export function AcademicStep() {
           />
         </Field>
 
-        <Field
+        <DraftField
+          id="academic-gpa"
           label="GPA"
-          htmlFor="academic-gpa"
           hint="On a 4.0 scale. Most providers ask for 3.0 or higher."
-        >
-          {(field) => (
-            <TextInput
-              id="academic-gpa"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              max={4}
-              step={0.01}
-              value={numberValue(academic?.gpa)}
-              onChange={(value) => setAcademic({ gpa: parseNumber(value) })}
-              placeholder="3.70"
-              {...field}
-            />
-          )}
-        </Field>
+          committed={numberValue(academic?.gpa)}
+          onCommit={(value) => setAcademic({ gpa: parseNumber(value) })}
+          isValid={(value) => isNumberInRange(value, 0, 4)}
+          errorMessage="Enter a GPA between 0 and 4."
+          inputMode="decimal"
+          placeholder="3.70"
+        />
 
         <Field label="Field of study" htmlFor="academic-field">
           <SelectInput
@@ -110,26 +106,17 @@ export function AcademicStep() {
           />
         </Field>
 
-        <Field
+        <DraftField
+          id="academic-graduation-year"
           label="Graduation year"
-          htmlFor="academic-graduation-year"
           hint="Your expected or actual completion year."
-        >
-          {(field) => (
-            <TextInput
-              id="academic-graduation-year"
-              type="number"
-              inputMode="numeric"
-              min={1950}
-              max={2040}
-              step={1}
-              value={numberValue(academic?.graduationYear)}
-              onChange={(value) => setAcademic({ graduationYear: parseNumber(value) })}
-              placeholder="2026"
-              {...field}
-            />
-          )}
-        </Field>
+          committed={numberValue(academic?.graduationYear)}
+          onCommit={(value) => setAcademic({ graduationYear: parseNumber(value) })}
+          isValid={(value) => isNumberInRange(value, 1950, 2040)}
+          errorMessage="Enter a year between 1950 and 2040."
+          inputMode="numeric"
+          placeholder="2026"
+        />
       </div>
 
       <Field
@@ -212,24 +199,23 @@ export function EligibilityStep() {
       </p>
 
       <div className="mt-7 grid gap-6">
-        <Field
+        <DraftField
+          id="eligibility-citizenship"
           label="Citizenship"
-          htmlFor="eligibility-citizenship"
-          hint="ISO country code. All twelve demo opportunities are open to every nationality, so this mainly records your profile."
-        >
-          {(field) => (
-            <TextInput
-              id="eligibility-citizenship"
-              autoComplete="country"
-              value={eligibility?.citizenship ?? ""}
-              onChange={(value) =>
-                setEligibility({ citizenship: value.trim() === "" ? undefined : value.trim().toUpperCase() })
-              }
-              placeholder="NG"
-              {...field}
-            />
-          )}
-        </Field>
+          hint="Two-letter country code, such as NG or DE. Every opportunity in our current collection is open to all nationalities, so this records your profile rather than changing your score."
+          committed={eligibility?.citizenship ?? ""}
+          onCommit={(value) =>
+            // Cleared means unknown, not an empty country code: an empty string
+            // would read as an answered field that matches no record.
+            setEligibility({
+              citizenship: value.trim() === "" ? undefined : value.trim().toUpperCase(),
+            })
+          }
+          isValid={(value) => value === "" || isCountryCode(value)}
+          errorMessage="Enter a two-letter country code, such as NG."
+          autoComplete="country"
+          placeholder="NG"
+        />
 
         <RadioGroup
           legend="Work authorisation"
@@ -241,64 +227,41 @@ export function EligibilityStep() {
         />
 
         <div className="grid gap-6 border-t border-hairline-soft pt-6 sm:grid-cols-3">
-          <Field
+          <DraftField
+            id="eligibility-ielts"
             label="IELTS"
-            htmlFor="eligibility-ielts"
             hint="Band, 0-9."
-          >
-            {(field) => (
-              <TextInput
-                id="eligibility-ielts"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                max={9}
-                step={0.5}
-                value={numberValue(tests?.ielts)}
-                onChange={(value) => setTest("ielts", value)}
-                placeholder="7.5"
-                {...field}
-              />
-            )}
-          </Field>
+            committed={numberValue(tests?.ielts)}
+            onCommit={(value) => setTest("ielts", value)}
+            isValid={(value) => isNumberInRange(value, 0, 9)}
+            errorMessage="Enter a band between 0 and 9."
+            inputMode="decimal"
+            placeholder="7.5"
+          />
 
-          <Field label="TOEFL" htmlFor="eligibility-toefl" hint="Score, 0-120.">
-            {(field) => (
-              <TextInput
-                id="eligibility-toefl"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={120}
-                step={1}
-                value={numberValue(tests?.toefl)}
-                onChange={(value) => setTest("toefl", value)}
-                placeholder="108"
-                {...field}
-              />
-            )}
-          </Field>
+          <DraftField
+            id="eligibility-toefl"
+            label="TOEFL"
+            hint="Score, 0-120."
+            committed={numberValue(tests?.toefl)}
+            onCommit={(value) => setTest("toefl", value)}
+            isValid={(value) => isNumberInRange(value, 0, 120)}
+            errorMessage="Enter a score between 0 and 120."
+            inputMode="numeric"
+            placeholder="108"
+          />
 
-          <Field
+          <DraftField
+            id="eligibility-duolingo"
             label="Duolingo"
-            htmlFor="eligibility-duolingo"
             hint="Score, 0-160."
-          >
-            {(field) => (
-              <TextInput
-                id="eligibility-duolingo"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={160}
-                step={1}
-                value={numberValue(tests?.duolingo)}
-                onChange={(value) => setTest("duolingo", value)}
-                placeholder="120"
-                {...field}
-              />
-            )}
-          </Field>
+            committed={numberValue(tests?.duolingo)}
+            onCommit={(value) => setTest("duolingo", value)}
+            isValid={(value) => isNumberInRange(value, 0, 160)}
+            errorMessage="Enter a score between 0 and 160."
+            inputMode="numeric"
+            placeholder="120"
+          />
         </div>
 
         <CheckboxGroup
@@ -384,47 +347,29 @@ export function ExperienceStep() {
       </p>
 
       <div className="mt-7 grid gap-6 sm:grid-cols-2">
-        <Field
+        <DraftField
+          id="experience-work"
           label="Years of work experience"
-          htmlFor="experience-work"
           hint="Enter 0 if you have none. That is a different answer from leaving this blank."
-        >
-          {(field) => (
-            <TextInput
-              id="experience-work"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={50}
-              step={1}
-              value={numberValue(work)}
-              onChange={(value) => setExperience({ workExperienceYears: parseNumber(value) })}
-              placeholder="2"
-              {...field}
-            />
-          )}
-        </Field>
+          committed={numberValue(work)}
+          onCommit={(value) => setExperience({ workExperienceYears: parseNumber(value) })}
+          isValid={(value) => isNumberInRange(value, 0, 50)}
+          errorMessage="Enter a number between 0 and 50."
+          inputMode="numeric"
+          placeholder="2"
+        />
 
-        <Field
+        <DraftField
+          id="experience-research"
           label="Years of research experience"
-          htmlFor="experience-research"
           hint="Publications, lab work or a dissertation."
-        >
-          {(field) => (
-            <TextInput
-              id="experience-research"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={50}
-              step={1}
-              value={numberValue(research)}
-              onChange={(value) => setExperience({ researchExperienceYears: parseNumber(value) })}
-              placeholder="1"
-              {...field}
-            />
-          )}
-        </Field>
+          committed={numberValue(research)}
+          onCommit={(value) => setExperience({ researchExperienceYears: parseNumber(value) })}
+          isValid={(value) => isNumberInRange(value, 0, 50)}
+          errorMessage="Enter a number between 0 and 50."
+          inputMode="numeric"
+          placeholder="1"
+        />
       </div>
 
       <div className="mt-6">
@@ -575,51 +520,59 @@ export function GoalsStep() {
           )}
         </Field>
 
-        <Field
+        <DraftField
+          id="goals-start"
           label="Earliest start date"
-          htmlFor="goals-start"
-          hint="Helps us surface opportunities with deadlines that still work."
-        >
-          {(field) => (
-            <TextInput
-              id="goals-start"
-              type="text"
-              value={goals?.startBy ?? ""}
-              onChange={(value) => setGoals({ startBy: value === "" ? undefined : value })}
-              placeholder="2027-09-01"
-              {...field}
-            />
-          )}
-        </Field>
+          hint="As YYYY-MM-DD, for example 2027-09-01. Helps us surface opportunities with deadlines that still work."
+          committed={goals?.startBy ?? ""}
+          onCommit={(value) =>
+            setGoals({ startBy: value.trim() === "" ? undefined : value.trim() })
+          }
+          isValid={(value) => value.trim() === "" || isIsoDate(value)}
+          errorMessage="Enter a real date as YYYY-MM-DD, for example 2027-09-01."
+          inputMode="numeric"
+          placeholder="2027-09-01"
+        />
       </div>
     </div>
   );
 }
 
-/** Step 6: clear-the-demo helper. */
+/** Step 6: saved-state summary and the deliberate way to discard a profile. */
 export function ResetStep() {
-  const { profile, clear } = useProfile();
+  const { profile, isHydrated, clear } = useProfile();
+  const completion = useMemo(() => profileCompletion(profile), [profile]);
 
-  const answered = useMemo(() => {
-    if (profile.academic === undefined) return 0;
-    return Object.keys(profile.academic).length;
-  }, [profile.academic]);
+  // Counted from the completion calculation rather than by counting keys on one
+  // section. The old version reported only academic answers, so a student who had
+  // filled in work authorisation and destinations was told they had nothing saved.
+  //
+  // Withheld before hydration: the server sees no stored profile at all, so any
+  // count it rendered would be a confident zero to somebody who has filled the
+  // whole thing in.
+  const summary = !isHydrated ? null : completion.answeredCount === 0
+    ? "Nothing saved yet."
+    : `${completion.answeredCount} of ${completion.fieldCount} scored answers saved (${completion.essentialAnswered} of ${completion.essentialTotal} essential).`;
 
   return (
     <div className={SECTION_CARD}>
       <h2 className={SECTION_HEADING}>Saved profile</h2>
       <p className="mt-2.5 max-w-lg text-pretty text-[0.9375rem] leading-relaxed text-mist-400">
-        Your profile is stored in this browser only. There is no account, and
-        nothing is sent to a server.
+        Every answer is saved to this browser as you type. There is no account, and
+        nothing is sent to a server, so clearing your browser data will remove it.
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button variant="secondary" onClick={clear}>
-          Clear profile
-        </Button>
-        <span className="text-sm text-mist-500">
-          {answered === 0 ? "Nothing saved yet." : `${answered} academic field(s) saved.`}
-        </span>
+        <ConfirmAction
+          label="Clear profile"
+          confirmLabel="Yes, clear it"
+          question="This permanently removes every answer stored in this browser. It cannot be undone."
+          onConfirm={clear}
+          variant="secondary"
+        />
+        {summary !== null ? (
+          <span className="text-sm text-mist-500">{summary}</span>
+        ) : null}
       </div>
     </div>
   );

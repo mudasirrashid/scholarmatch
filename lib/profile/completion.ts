@@ -45,6 +45,8 @@ export interface CompletionGap {
   reason: string;
   /** Share of the total this field is worth. */
   weight: number;
+  /** Same distinction as `CompletionField.tier`, for the gap list. */
+  tier: CompletionTier;
 }
 
 /** A completion gap paired with whether the profile already answers it. */
@@ -54,7 +56,19 @@ export interface CompletionField {
   section: CompletionGap["section"];
   weight: number;
   isAnswered: boolean;
+  /**
+   * Whether the ranking depends on this field or merely sharpens.
+   *
+   * `essential` fields gate eligibility, so leaving them blank caps the
+   * confidence on every result at once. `helpful` fields only reorder results,
+   * and a profile can be missing all of them and still be worth reading. The
+   * distinction is surfaced so "complete" cannot be reached by answering only the
+   * easy questions.
+   */
+  tier: CompletionTier;
 }
+
+export type CompletionTier = "essential" | "helpful";
 
 export interface ProfileCompletion {
   /** Whole-number percentage, 0 to 100. */
@@ -68,6 +82,9 @@ export interface ProfileCompletion {
   /** Fields answered and unweighted, for "3 of 8 answered" style copy. */
   answeredCount: number;
   fieldCount: number;
+  /** Essential fields answered, of `essentialTotal`. */
+  essentialAnswered: number;
+  essentialTotal: number;
   /** Every field the engine reads, in builder order. */
   fields: readonly CompletionField[];
   /** Unanswered fields, highest impact first. */
@@ -81,10 +98,41 @@ export interface ProfileCompletion {
 }
 
 /**
+ * Fields that must be answered before a ranking is worth reading.
+ *
+ * The three hard dimensions, in the order a student should be pointed at them.
+ * Kept as an explicit list rather than derived from `HARD_DIMENSIONS` because
+ * `academic` covers two fields here (degree level and GPA) and the ordering is
+ * a product decision, not an engine one.
+ */
+const CORE_FIELDS = ["currentDegree", "gpa", "citizenship", "workAuthorization"] as const;
+
+/**
+ * Membership test for the essential tier.
+ *
+ * Derived from `CORE_FIELDS` so the tier a field is given in the UI cannot drift
+ * away from the set that decides whether results are meaningful.
+ */
+const ESSENTIAL_IDS: ReadonlySet<string> = new Set<string>(CORE_FIELDS);
+
+/**
+ * Which tier a field id belongs to.
+ *
+ * A named function rather than an inline ternary so both the field list and the
+ * gap list read the tier the same way, and the returned type stays narrow.
+ */
+function tierOf(id: string): CompletionTier {
+  return ESSENTIAL_IDS.has(id) ? "essential" : "helpful";
+}
+
+/**
  * The profile fields the engine acts on, with the weight each one carries.
  *
- * Weights are normalised inside `completionWeight`, so they express priority
- * rather than having to sum to one by hand.
+ * Weights are intentionally independent of `DIMENSION_WEIGHTS`. That constant
+ * scales a match score, where an unanswered field is damped rather than absent.
+ * Here an unanswered field is missing outright, so the hard dimensions dominate:
+ * an unknown degree level or work authorisation weakens every result at once,
+ * while an unknown study mode only changes the preferences dimension.
  */
 const PROFILE_FIELDS: readonly {
   id: string;
@@ -208,16 +256,6 @@ const PROFILE_FIELDS: readonly {
 ];
 
 /**
- * Fields that must be answered before a ranking is worth reading.
- *
- * The three hard dimensions, in the order a student should be pointed at them.
- * Kept as an explicit list rather than derived from `HARD_DIMENSIONS` because
- * `academic` covers two fields here (degree level and GPA) and the ordering is
- * a product decision, not an engine one.
- */
-const CORE_FIELDS = ["currentDegree", "gpa", "citizenship", "workAuthorization"] as const;
-
-/**
  * Percentage below which results are presented as provisional.
  *
  * Roughly one hard dimension answered, so the UI can lead with "finish your
@@ -239,12 +277,16 @@ export function profileCompletion(profile: StudentProfile): ProfileCompletion {
     section: entry.section,
     weight: entry.weight,
     isAnswered: entry.isAnswered(profile),
+    tier: tierOf(entry.id),
   }));
 
   const total = fields.reduce((sum, field) => sum + field.weight, 0);
   const earned = fields.reduce((sum, field) => sum + (field.isAnswered ? field.weight : 0), 0);
 
   const answeredCount = fields.filter((field) => field.isAnswered).length;
+
+  const essential = fields.filter((field) => field.tier === "essential");
+  const essentialAnswered = essential.filter((field) => field.isAnswered).length;
 
   const gaps: CompletionGap[] = PROFILE_FIELDS.filter((entry) => !entry.isAnswered(profile))
     .map((entry) => ({
@@ -253,8 +295,14 @@ export function profileCompletion(profile: StudentProfile): ProfileCompletion {
       section: entry.section,
       reason: entry.reason,
       weight: entry.weight,
+      tier: tierOf(entry.id),
     }))
-    .sort((a, b) => b.weight - a.weight || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) =>
+        b.weight - a.weight ||
+        Number(b.tier === "essential") - Number(a.tier === "essential") ||
+        a.id.localeCompare(b.id),
+    );
 
   const ratio = total === 0 ? 0 : earned / total;
 
@@ -265,6 +313,8 @@ export function profileCompletion(profile: StudentProfile): ProfileCompletion {
     total,
     answeredCount,
     fieldCount: fields.length,
+    essentialAnswered,
+    essentialTotal: essential.length,
     fields,
     gaps,
     isMeaningful: CORE_FIELDS.every((id) => fields.find((field) => field.id === id)?.isAnswered === true),

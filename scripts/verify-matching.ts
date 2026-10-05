@@ -27,12 +27,14 @@ import {
 import { evaluateDegree, evaluateNationality, evaluateWorkAuthorization } from "@/lib/matching/eligibility";
 import { relateFields, relateToFields } from "@/lib/matching/fields";
 import { isProvisional, profileCompletion } from "@/lib/profile/completion";
+import { isCountryCode, isIsoDate, isNumberInRange } from "@/lib/profile/options";
 import { parseProfile, parseStoredProfile } from "@/lib/profile/parse";
 import { allScholarships, toPreview } from "@/lib/scholarships";
 import { toPreviewFromMatch } from "@/lib/scholarships";
 import {
   activeDemoProfile,
   demoProfiles,
+  isDemoProfile,
   profileA,
   profileB,
   profileC,
@@ -899,6 +901,205 @@ check(
   "completion is a pure function of the profile",
   [profileCompletion(profileA).percent, profileCompletion(profileA).percent],
   [completionA.percent, completionA.percent],
+);
+
+/* ==========================================================================
+   18. Profile field validation
+   ========================================================================== */
+
+section("Profile field validation");
+
+/*
+  These guard the gap between what the builder accepts and what `parseProfile`
+  accepts. The bug they cover was that they did not match: a keystroke went
+  straight into the profile, the engine scored it, and the next page load threw it
+  away. The builder now refuses to store anything these reject.
+*/
+
+check("a GPA on the 4.0 scale is accepted", isNumberInRange("3.7", 0, 4), true);
+check("a partial decimal is accepted while typing", isNumberInRange("3.", 0, 4), true);
+check("a GPA above 4.0 is rejected", isNumberInRange("9.5", 0, 4), false);
+check("a negative GPA is rejected", isNumberInRange("-1", 0, 4), false);
+check("clearing a numeric field is allowed", isNumberInRange("", 0, 4), true);
+check("an IELTS band above 9 is rejected", isNumberInRange("10", 0, 9), false);
+check("an IELTS band below 0 is rejected", isNumberInRange("-0.5", 0, 9), false);
+check("a TOEFL score of 108 is accepted", isNumberInRange("108", 0, 120), true);
+check("a TOEFL score above 120 is rejected", isNumberInRange("121", 0, 120), false);
+check("a graduation year outside the range is rejected", isNumberInRange("1800", 1950, 2040), false);
+
+check("a two-letter country code is accepted", isCountryCode("NG"), true);
+check("a lower-case country code is accepted", isCountryCode("ng"), true);
+check("a full country name is rejected", isCountryCode("Nigeria"), false);
+check("a three-letter code is rejected", isCountryCode("NGA"), false);
+
+check("a real ISO date is accepted", isIsoDate("2027-09-01"), true);
+check("a well-shaped impossible date is rejected", isIsoDate("2027-13-45"), false);
+check("a partial date is rejected", isIsoDate("2027-09"), false);
+check("a prose date is rejected", isIsoDate("September 2027"), false);
+
+/*
+  The rejection above has to agree with the parser, otherwise the builder accepts
+  something that storage will quietly drop on the next load.
+*/
+check(
+  "the builder and the parser agree on an out-of-range GPA",
+  [
+    isNumberInRange("9.5", 0, 4),
+    parseProfile({ schemaVersion: 1, academic: { gpa: 9.5 } })?.academic?.gpa !== undefined,
+  ],
+  [false, false],
+);
+check(
+  "the builder and the parser agree on a malformed start date",
+  [
+    isIsoDate("2027-13-45"),
+    parseProfile({ schemaVersion: 1, goals: { startBy: "2027-13-45" } })?.goals?.startBy !==
+      undefined,
+  ],
+  // As with citizenship, the parser is looser than the builder: it shape-checks
+  // the date because the value is only ever compared as a string, and rejecting it
+  // there would discard a student's answer with no way to tell them why. The
+  // builder refuses it up front instead, with an explanation.
+  [false, true],
+);
+check(
+  "a start date that is not a date at all is dropped by both",
+  [
+    isIsoDate("September 2027"),
+    parseProfile({ schemaVersion: 1, goals: { startBy: "September 2027" } })?.goals?.startBy !==
+      undefined,
+  ],
+  [false, false],
+);
+check(
+  "the builder and the parser agree on a full country name",
+  [
+    isCountryCode("Nigeria"),
+    parseProfile({ schemaVersion: 1, eligibility: { citizenship: "Nigeria" } })?.eligibility
+      ?.citizenship !== undefined,
+  ],
+  // The parser keeps any non-empty string, because the engine only ever compares
+  // for equality. The builder is stricter, so nothing unusable reaches the profile.
+  [false, true],
+);
+
+/* ==========================================================================
+   19. Completion tiers
+   ========================================================================== */
+
+section("Completion tiers");
+
+const ESSENTIAL_IDS = ["currentDegree", "gpa", "citizenship", "workAuthorization"];
+
+check("there are four essential fields", completionA.essentialTotal, 4);
+check(
+  "profile A answers every essential field",
+  completionA.essentialAnswered,
+  completionA.essentialTotal,
+);
+check("profile B answers no essential field", completionB.essentialAnswered, 0);
+check(
+  "a profile is meaningful exactly when every essential field is answered",
+  [completionA.isMeaningful, completionB.isMeaningful],
+  [
+    completionA.essentialAnswered === completionA.essentialTotal,
+    completionB.essentialAnswered === completionB.essentialTotal,
+  ],
+);
+check(
+  "tier follows the essential field list",
+  completionA.fields.every((field) =>
+    ESSENTIAL_IDS.includes(field.id)
+      ? field.tier === "essential"
+      : field.tier === "helpful",
+  ),
+  true,
+);
+check(
+  "every gap carries the tier of the field it came from",
+  completionB.gaps.every((gap) =>
+    ESSENTIAL_IDS.includes(gap.id) ? gap.tier === "essential" : gap.tier === "helpful",
+  ),
+  true,
+);
+
+/*
+  The distinction exists so a percentage cannot be reached by answering only the
+  easy questions. A profile that clears every hard requirement is worth reading
+  even with nothing else filled in, and must not report itself as incomplete.
+*/
+const essentialOnly = profileCompletion({
+  schemaVersion: 1,
+  academic: { currentDegree: "masters", gpa: 3.4 },
+  eligibility: { citizenship: "NG", workAuthorization: "student_visa" },
+});
+check("a profile of essential answers only is meaningful", essentialOnly.isMeaningful, true);
+check("a profile of essential answers only is not provisional", isProvisional(essentialOnly), false);
+check(
+  "a profile of essential answers only is not reported as 100% complete",
+  essentialOnly.percent < 100,
+  true,
+);
+check(
+  "its remaining gaps are all helpful",
+  essentialOnly.gaps.every((gap) => gap.tier === "helpful"),
+  true,
+);
+
+/* ==========================================================================
+   20. Demo profile recognition
+   ========================================================================== */
+
+section("Demo profile recognition");
+
+/*
+  The builder needs this to avoid destroying real answers when a demo is loaded
+  over them, and to label what is on screen. Both depend on recognising a demo
+  after a storage round-trip, which is where the profile has been rebuilt by the
+  parser rather than being the original literal.
+*/
+
+for (const demo of demoProfiles) {
+  const roundTripped = parseStoredProfile(JSON.stringify(demo));
+  check(
+    `${demo.displayName} is recognised after a storage round-trip`,
+    roundTripped !== null && isDemoProfile(roundTripped),
+    true,
+  );
+}
+
+check("an empty profile is not a demo", isDemoProfile({ schemaVersion: 1 }), false);
+check(
+  "a profile the visitor has edited is no longer a demo",
+  isDemoProfile({ ...profileA, academic: { ...profileA.academic, gpa: 1.1 } }),
+  false,
+);
+check(
+  "a profile built from scratch is not a demo",
+  isDemoProfile({
+    schemaVersion: 1,
+    academic: { currentDegree: "masters", gpa: 3.9 },
+    displayName: "Profile A - Strong applicant",
+  }),
+  false,
+);
+check(
+  "key order in storage does not affect recognition",
+  isDemoProfile(
+    parseStoredProfile(
+      JSON.stringify({
+        // Same profile as A, written in the opposite order.
+        displayName: profileA.displayName,
+        schemaVersion: 1,
+        goals: profileA.goals,
+        preferences: profileA.preferences,
+        experience: profileA.experience,
+        eligibility: profileA.eligibility,
+        academic: profileA.academic,
+      }),
+    )!,
+  ),
+  true,
 );
 
 /*

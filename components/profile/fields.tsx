@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
@@ -24,22 +25,44 @@ const FIELD_HINT = "mt-1.5 text-xs leading-relaxed text-mist-500";
  *
  * The label always keeps its `for`. An earlier version dropped the association
  * whenever a hint was present, which left every hinted input unnamed.
+ *
+ * `invalid` exists because the control has to carry it, not the wrapper: only
+ * the focusable element understands `aria-invalid` and `aria-describedby`.
  */
 export interface FieldDescription {
   /** Pass to the control's `aria-describedby`. */
   readonly describedBy?: string;
+  /** Pass to the control's `aria-invalid`. */
+  readonly invalid?: boolean;
+}
+
+/** Shared description id plumbing for hint and error text. */
+function descriptionIds(...ids: (string | undefined)[]): string | undefined {
+  const present = ids.filter((id): id is string => id !== undefined);
+  return present.length === 0 ? undefined : present.join(" ");
 }
 
 export function Field({
   label,
   htmlFor,
   hint,
+  error,
   children,
   className,
 }: {
   label: string;
   htmlFor: string;
   hint?: string;
+  /**
+   * Validation message for this control.
+   *
+   * Rendered as ordinary text and wired through `aria-describedby` rather than as
+   * a live region: an alert that re-announces on every keystroke while a number
+   * is being typed is worse than none. `aria-invalid` on the control is what tells
+   * assistive technology the field needs attention, and it is read when focus
+   * reaches the input.
+   */
+  error?: string;
   /**
    * Either the control itself, or a function receiving the description wiring
    * for it. The function form exists because `aria-describedby` only takes
@@ -49,7 +72,12 @@ export function Field({
   className?: string;
 }) {
   const hintId = hint === undefined ? undefined : `${htmlFor}-hint`;
-  const control = typeof children === "function" ? children({ describedBy: hintId }) : children;
+  const errorId = error === undefined ? undefined : `${htmlFor}-error`;
+  const describedBy = descriptionIds(hintId, errorId);
+  const control =
+    typeof children === "function"
+      ? children({ describedBy, invalid: error !== undefined })
+      : children;
 
   return (
     <div className={cn("min-w-0", className)}>
@@ -62,6 +90,12 @@ export function Field({
       {hint ? (
         <p id={hintId} className={FIELD_HINT}>
           {hint}
+        </p>
+      ) : null}
+
+      {error ? (
+        <p id={errorId} className="mt-1.5 text-xs leading-relaxed text-rose-200">
+          {error}
         </p>
       ) : null}
     </div>
@@ -87,6 +121,7 @@ export function TextInput({
   step,
   autoComplete,
   describedBy,
+  invalid,
 }: {
   id: string;
   /** Empty string clears the value, which is how a student opts out. */
@@ -100,6 +135,7 @@ export function TextInput({
   step?: number;
   autoComplete?: string;
   describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
     <input
@@ -113,9 +149,106 @@ export function TextInput({
       autoComplete={autoComplete}
       placeholder={placeholder}
       aria-describedby={describedBy}
+      aria-invalid={invalid || undefined}
       onChange={(event) => onChange(event.target.value)}
       className={INPUT_CLASSES}
     />
+  );
+}
+
+/**
+ * A text field that only ever stores a value the profile will accept.
+ *
+ * Several questions here have a real scale rather than a free-text answer: a GPA
+ * lives on a 4.0 scale, IELTS on a 9-point one, citizenship is a two-letter ISO
+ * code. Writing each keystroke straight into the profile caused two defects that
+ * this exists to prevent:
+ *
+ * 1. The engine scored values its own parser would reject. A GPA of 9.5 was read
+ *    as a strong academic record for the rest of the session.
+ * 2. The value then vanished on the next page load, because `parseStoredProfile`
+ *    discards anything out of range. The student was told their answer was saved
+ *    and then lost it, with no explanation.
+ *
+ * So the keystrokes are held here while the field has focus, and `onCommit` is
+ * called only for values `isValid` accepts. The profile keeps the last valid
+ * answer, which is also what gets scored, and a rejected keystroke stays in the
+ * box with the reason underneath instead of vanishing.
+ *
+ * Holding the raw text while focused is not incidental. A controlled input whose
+ * value is re-rendered from the parsed number drops the trailing dot in "3." and
+ * turns the next keystroke into "37".
+ */
+export function DraftField({
+  id,
+  label,
+  hint,
+  committed,
+  onCommit,
+  isValid,
+  errorMessage,
+  placeholder,
+  inputMode,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  /** The stored value, already rendered for display. */
+  committed: string;
+  /** Receives every keystroke that `isValid` accepts, clearing included. */
+  onCommit: (value: string) => void;
+  isValid: (raw: string) => boolean;
+  /** Shown under the field while a rejected keystroke is in it. */
+  errorMessage: string;
+  placeholder?: string;
+  inputMode?: "text" | "decimal" | "numeric";
+  autoComplete?: string;
+}) {
+  const [draft, setDraft] = useState(committed);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // While the field has focus the student is the source of truth. Once they
+  // leave, the stored value takes over, so a demo profile loaded from elsewhere on
+  // the page or a profile cleared from another tab is reflected here.
+  const shown = isEditing ? draft : committed;
+  const error = isEditing && !isValid(draft) ? errorMessage : undefined;
+
+  return (
+    <Field label={label} htmlFor={id} hint={hint} error={error}>
+      {(field) => (
+        <input
+          id={id}
+          type="text"
+          value={shown}
+          inputMode={inputMode}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          aria-describedby={field.describedBy}
+          aria-invalid={field.invalid || undefined}
+          onFocus={() => {
+            // Re-read the store on entry, so a value replaced while this field was
+            // unfocused is picked up rather than overwritten by a stale draft.
+            setDraft(committed);
+            setIsEditing(true);
+          }}
+          onChange={(event) => {
+            const next = event.target.value;
+            setDraft(next);
+
+            if (isValid(next)) onCommit(next);
+          }}
+          onBlur={() => {
+            // A valid entry settles onto the normalised stored value. An invalid
+            // one keeps the student's text and its error, because discarding
+            // something they typed without a word is the behaviour this component
+            // was written to remove.
+            if (isValid(draft)) setIsEditing(false);
+          }}
+          className={INPUT_CLASSES}
+        />
+      )}
+    </Field>
   );
 }
 
@@ -133,6 +266,7 @@ export function SelectInput({
   options,
   placeholder,
   describedBy,
+  invalid,
 }: {
   id: string;
   value: string;
@@ -140,6 +274,7 @@ export function SelectInput({
   options: readonly { value: string; label: string }[];
   placeholder: string;
   describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
     <div className="relative">
@@ -147,6 +282,7 @@ export function SelectInput({
         id={id}
         value={value}
         aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
         onChange={(event) => onChange(event.target.value)}
         className={cn(INPUT_CLASSES, "appearance-none pr-11")}
       >

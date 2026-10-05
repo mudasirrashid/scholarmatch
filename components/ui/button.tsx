@@ -56,6 +56,13 @@ export interface ButtonProps {
   "aria-expanded"?: boolean;
   "aria-haspopup"?: boolean | "dialog" | "menu" | "listbox";
   "aria-controls"?: string;
+  /**
+   * Moves focus to this button as it appears.
+   *
+   * Used by inline confirmation, where the follow-up action replaces the
+   * trigger and keyboard focus would otherwise fall back to the document.
+   */
+  autoFocus?: boolean;
   onClick?: () => void;
   /**
    * Forwarded so callers can move focus deliberately, which the mobile filter
