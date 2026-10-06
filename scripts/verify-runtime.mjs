@@ -243,5 +243,62 @@ check(
  * fetches the routes the links point at.
  */
 
+/*
+ * A scholarship reached from `/matches` carries `?mine=1`, asking the page to
+ * score the record against the reader's own stored profile.
+ *
+ * The route stays prerendered, so the flag is read in the browser and the server
+ * cannot respond differently to it. What the response can still promise is the
+ * part that matters for honesty: whatever a visitor sees before that flag is read
+ * must be labelled as the sample profile it actually is, never presented as their
+ * own result. The personalised figure itself is client state, covered by the a11y
+ * audit and by browser QA.
+ */
+console.log("\n--- personalised detail context ---");
+const mine = await get("/scholarships/demo-global-excellence?mine=1");
+check("personalised detail returns 200", mine.status, 200);
+check(
+  "personalised detail labels the pre-hydration score as the sample profile",
+  /sample student profile, not your own answers/i.test(mine.html),
+  true,
+);
+check(
+  "personalised detail still offers a route to the visitor's own match",
+  mine.html.includes('href="/profile"'),
+  true,
+);
+check(
+  "personalised detail keeps the canonical free of the flag",
+  mine.html.includes(
+    '<link rel="canonical" href="https://www.scholarmatch.me/scholarships/demo-global-excellence"',
+  ),
+  true,
+);
+for (const id of SECTION_IDS) {
+  check(`personalised detail still has section #${id}`, mine.html.includes(`id="${id}"`), true);
+}
+
+/*
+ * Regression guard for the other direction: with no flag the page must keep
+ * quoting the sample figure the explorer produced, because that is the context
+ * its cards were scored in, and that figure must stay labelled the same way.
+ */
+const mineSample = await get("/scholarships/demo-global-excellence");
+check(
+  "sample-context detail still quotes the explorer score",
+  /Overall match: \d+ percent/.test(mineSample.html),
+  true,
+);
+check(
+  "sample-context detail labels the score as the sample profile",
+  /sample student profile, not your own answers/i.test(mineSample.html),
+  true,
+);
+check(
+  "sample-context detail keeps its verdict summary",
+  /based on your profile/i.test(mineSample.html),
+  true,
+);
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

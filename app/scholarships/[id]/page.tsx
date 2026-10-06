@@ -7,6 +7,11 @@ import { EligibilityList } from "@/components/scholarships/detail/eligibility-li
 import { MatchBreakdown } from "@/components/scholarships/detail/match-breakdown";
 import { QuickFacts } from "@/components/scholarships/detail/quick-facts";
 import {
+  PersonalisedMatchBreakdown,
+  PersonalisedMatchProvider,
+  PersonalisedMatchRing,
+} from "@/components/matches/personalised-match";
+import {
   ApplySteps,
   DocumentChecklist,
   FundingBreakdown,
@@ -84,6 +89,32 @@ const SECTIONS = [
   { id: "source", label: "Source" },
 ] as const;
 
+/**
+ * Says whose answers produced the score above.
+ *
+ * That score comes from `activeDemoProfile`, not from whatever the visitor has
+ * stored, so this page must not let it read as theirs. Left unsaid, the page
+ * showed "Strong match based on your profile" at 95% to a reader whose own answers
+ * scored very differently, which is the one way a personalised site states
+ * something untrue about the person reading it.
+ *
+ * Naming the context costs one line and makes the number mean what it is: a
+ * worked example, with a route to the figure that is actually theirs.
+ */
+function SampleProfileNote() {
+  return (
+    <p className="mt-4 text-[0.8125rem] leading-relaxed text-pretty text-mist-500">
+      Scored against the sample student profile, not your own answers.{" "}
+      <Link
+        href="/profile"
+        className="text-mist-100 underline decoration-white/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300"
+      >
+        Score it against my profile
+      </Link>
+    </p>
+  );
+}
+
 export default async function ScholarshipDetailPage({
   params,
 }: {
@@ -100,7 +131,13 @@ export default async function ScholarshipDetailPage({
   const match = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
   const score = match.score;
 
-  return (
+  /*
+    Held as a value rather than nested inline, so the personalised provider adds
+    one wrapper at the end instead of a level of indentation across the whole
+    page. The markup below is exactly what it was before; only the two
+    score-bearing areas inside it can be replaced.
+  */
+  const body = (
     <SavedProvider>
       {/* Hero */}
       <section className="relative isolate overflow-hidden pt-28 pb-8 sm:pt-32 lg:pt-36">
@@ -157,13 +194,19 @@ export default async function ScholarshipDetailPage({
 
             {/* Match ring */}
             <div className="flex items-start">
-              <div className="surface-glass edge-highlight relative rounded-3xl p-7 text-center">
-                <MatchRing score={score} size="lg" label="Overall match" />
+              <PersonalisedMatchRing
+                fallback={
+                  <div className="surface-glass edge-highlight relative rounded-3xl p-7 text-center">
+                    <MatchRing score={score} size="lg" label="Overall match" />
 
-                <p className="mt-4 max-w-[13rem] text-pretty text-[0.8125rem] text-mist-400">
-                  {match.summary}
-                </p>
-              </div>
+                    <p className="mt-4 max-w-[13rem] text-pretty text-[0.8125rem] text-mist-400">
+                      {match.summary}
+                    </p>
+
+                    <SampleProfileNote />
+                  </div>
+                }
+              />
             </div>
           </div>
         </Container>
@@ -225,26 +268,35 @@ export default async function ScholarshipDetailPage({
               title="Your match"
               description="Where you stand against each requirement, and what to fix before you apply."
             >
-              <MatchBreakdown match={match} />
+              <PersonalisedMatchBreakdown
+                fallback={
+                  <>
+                    <MatchBreakdown match={match} />
 
-              {match.missingRequirements.length > 0 ? (
-                <div className="surface-glass mt-6 rounded-2xl p-5">
-                  <h3 className="text-sm font-medium text-mist-100">
-                    Still needed before you apply
-                  </h3>
-                  <ul className="mt-3 space-y-2">
-                    {match.missingRequirements.map((requirement) => (
-                      <li key={requirement} className="flex gap-2.5 text-sm text-mist-300">
-                        <span
-                          className="mt-2 size-1 shrink-0 rounded-full bg-amber-400"
-                          aria-hidden="true"
-                        />
-                        {requirement}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+                    {match.missingRequirements.length > 0 ? (
+                      <div className="surface-glass mt-6 rounded-2xl p-5">
+                        <h3 className="text-sm font-medium text-mist-100">
+                          Still needed before you apply
+                        </h3>
+                        <ul className="mt-3 space-y-2">
+                          {match.missingRequirements.map((requirement) => (
+                            <li
+                              key={requirement}
+                              className="flex gap-2.5 text-sm text-mist-300"
+                            >
+                              <span
+                                className="mt-2 size-1 shrink-0 rounded-full bg-amber-400"
+                                aria-hidden="true"
+                              />
+                              {requirement}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </>
+                }
+              />
             </DetailSection>
 
             <DetailSection
@@ -326,5 +378,9 @@ export default async function ScholarshipDetailPage({
         </div>
       </Container>
     </SavedProvider>
+  );
+
+  return (
+    <PersonalisedMatchProvider scholarship={scholarship}>{body}</PersonalisedMatchProvider>
   );
 }

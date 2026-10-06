@@ -7,6 +7,7 @@ import { ScholarshipCard } from "@/components/scholarships/scholarship-card";
 import { ScholarshipGridSkeleton } from "@/components/scholarships/scholarship-card-skeleton";
 import { SavedProvider } from "@/components/scholarships/saved-provider";
 import { ProfileProvider, useProfile } from "@/components/profile/profile-provider";
+import { Reveal } from "@/components/motion/reveal";
 import { AmbientField } from "@/components/ui/ambient-field";
 import { Badge, Eyebrow } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,23 @@ import type { RankedScholarship } from "@/types/matching";
 
 /** Cards shown in the "top matches" rail, before the per-band listings. */
 const TOP_MATCH_COUNT = 3;
+
+/**
+ * Destination for every card here.
+ *
+ * `?mine=1` is the visitor saying "score this against my own profile". The detail
+ * page cannot work that out on its own, because the profile lives in
+ * `localStorage` and the server cannot read it. Carrying the intent in the URL is
+ * what lets the page render the reader's own figure in the first paint instead of
+ * quoting the sample profile's, which is what made a card promise 62% and the
+ * page behind it promise 95%.
+ *
+ * The explorer's own links stay bare, so a record reached from `/scholarships`
+ * keeps the sample context its card was scored in.
+ */
+function detailHref(id: string): string {
+  return `/scholarships/${id}?mine=1`;
+}
 
 export function MatchesView() {
   return (
@@ -133,85 +151,91 @@ function MatchesViewInner() {
             <ProfileProgress />
 
             <section aria-labelledby="top-matches-heading" className="mt-16">
-              <h2
-                id="top-matches-heading"
-                className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
-              >
-                Top matches
-              </h2>
-              <p className="mt-2 max-w-xl text-pretty text-mist-400">
-                The {Math.min(TOP_MATCH_COUNT, ranked.length)} strongest results in your
-                ranking, in the order the engine put them.
-              </p>
+              <Reveal>
+                <h2
+                  id="top-matches-heading"
+                  className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
+                >
+                  Top matches
+                </h2>
+                <p className="mt-2 max-w-xl text-pretty text-mist-400">
+                  The {Math.min(TOP_MATCH_COUNT, ranked.length)} strongest results in your
+                  ranking, in the order the engine put them.
+                </p>
 
-              <ul className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {top.map((entry, index) => (
-                  <li key={entry.scholarship.id} className="h-full min-w-0">
-                    <ScholarshipCard
-                      scholarship={toPreview(
-                        entry.scholarship,
-                        toMatchInsights(entry.match),
-                      )}
-                      href={`/scholarships/${entry.scholarship.id}`}
-                      priority={index === 0}
-                    />
-                  </li>
-                ))}
-              </ul>
+                <ul className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {top.map((entry, index) => (
+                    <li key={entry.scholarship.id} className="h-full min-w-0">
+                      <ScholarshipCard
+                        scholarship={toPreview(
+                          entry.scholarship,
+                          toMatchInsights(entry.match),
+                        )}
+                        href={detailHref(entry.scholarship.id)}
+                        priority={index === 0}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
             </section>
 
             <section aria-labelledby="why-heading" className="mt-20">
-              <h2
-                id="why-heading"
-                className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
-              >
-                Why these match
-              </h2>
-              <p className="mt-2 max-w-xl text-pretty text-mist-400">
-                The same breakdown the scholarship page shows, split by the six
-                dimensions the engine scores.
-              </p>
+              <Reveal>
+                <h2
+                  id="why-heading"
+                  className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
+                >
+                  Why these match
+                </h2>
+                <p className="mt-2 max-w-xl text-pretty text-mist-400">
+                  The same breakdown the scholarship page shows, split by the six
+                  dimensions the engine scores.
+                </p>
 
-              <div className="mt-7 space-y-6">
-                {top.map((entry) => (
-                  <WhyThisMatches key={entry.scholarship.id} entry={entry} />
-                ))}
-              </div>
+                <div className="mt-7 space-y-6">
+                  {top.map((entry) => (
+                    <WhyThisMatches key={entry.scholarship.id} entry={entry} />
+                  ))}
+                </div>
+              </Reveal>
             </section>
 
             <section aria-labelledby="bands-heading" className="mt-20">
-              <h2
-                id="bands-heading"
-                className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
-              >
-                All matches by category
-              </h2>
-              <p className="mt-2 max-w-xl text-pretty text-mist-400">
-                Grouped by fit. What you cannot apply to is kept at the bottom, with
-                the requirement that blocks it, rather than hidden.
-              </p>
-
-              {/*
-                Band copy describes fit, so it would overstate what is known when
-                every single result is provisional. Said once, here, rather than
-                repeated per band.
-              */}
-              {groups.provisionalCount === ranked.length ? (
-                <p className="mt-5 flex max-w-2xl gap-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-3.5 text-sm leading-relaxed text-mist-300">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
-                  <span>
-                    Every result below is provisional: too little of your profile could
-                    be checked for the band to mean much yet. Completing the fields above
-                    is what will separate them.
-                  </span>
+              <Reveal>
+                <h2
+                  id="bands-heading"
+                  className="font-display text-2xl font-normal tracking-[-0.015em] text-mist-50 sm:text-3xl"
+                >
+                  All matches by category
+                </h2>
+                <p className="mt-2 max-w-xl text-pretty text-mist-400">
+                  Grouped by fit. What you cannot apply to is kept at the bottom, with
+                  the requirement that blocks it, rather than hidden.
                 </p>
-              ) : null}
 
-              <div className="mt-10 space-y-14">
-                {remainingBands.map((band) => (
-                  <Band key={band.id} band={band} />
-                ))}
-              </div>
+                {/*
+                  Band copy describes fit, so it would overstate what is known when
+                  every single result is provisional. Said once, here, rather than
+                  repeated per band.
+                */}
+                {groups.provisionalCount === ranked.length ? (
+                  <p className="mt-5 flex max-w-2xl gap-3 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-3.5 text-sm leading-relaxed text-mist-300">
+                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+                    <span>
+                      Every result below is provisional: too little of your profile could
+                      be checked for the band to mean much yet. Completing the fields above
+                      is what will separate them.
+                    </span>
+                  </p>
+                ) : null}
+
+                <div className="mt-10 space-y-14">
+                  {remainingBands.map((band) => (
+                    <Band key={band.id} band={band} />
+                  ))}
+                </div>
+              </Reveal>
             </section>
 
             <NextSteps />
@@ -290,7 +314,7 @@ function Band({ band }: { band: RecommendationBand }) {
           <li key={entry.scholarship.id} className="h-full min-w-0">
             <ScholarshipCard
               scholarship={toPreview(entry.scholarship, toMatchInsights(entry.match))}
-              href={`/scholarships/${entry.scholarship.id}`}
+              href={detailHref(entry.scholarship.id)}
             />
           </li>
         ))}
