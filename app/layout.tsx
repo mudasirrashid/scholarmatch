@@ -100,10 +100,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           scroll-reveal system can safely hide content by default. Without
           JavaScript nothing is hidden, which keeps the page readable when
           scripting is unavailable or blocked.
+
+          The same script also records whether this request asked for the
+          visitor's own match (`?mine=1`). It has to happen here, in the head and
+          before the body is parsed, because the detail route is prerendered: its
+          markup carries the sample figure, and the only moment the browser can be
+          told to hold that figure back is before it would first be painted. A
+          flag set later — from a component, an effect, anywhere after parsing —
+          arrives one paint too late, and another person's score has already been
+          on screen.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('js')`,
+            __html: `document.documentElement.classList.add('js');if(new URLSearchParams(location.search).get('mine')==='1'){document.documentElement.setAttribute('data-match-context','mine')}`,
           }}
         />
       </head>

@@ -165,8 +165,15 @@ function useMatchState(): MatchState {
   };
 }
 
-/** Placeholder matching the ring card's geometry, so the swap cannot reflow. */
-function RingPlaceholder() {
+/**
+ * Placeholder matching the ring card's geometry, so the swap cannot reflow.
+ *
+ * Exported because the prerendered detail page needs the same card in its own
+ * HTML for `?mine=1`: that route is served with the sample figure and only
+ * discovers it should show the visitor's match after hydration, so the neutral
+ * state has to already be on the page rather than appear one paint later.
+ */
+export function RingPlaceholder() {
   return (
     <div className="surface-glass edge-highlight relative rounded-3xl p-7 text-center">
       <div aria-hidden="true" className="shimmer mx-auto size-36 rounded-full" />
@@ -175,8 +182,12 @@ function RingPlaceholder() {
   );
 }
 
-/** Same silence on the numbers, same shape as the six breakdown tiles. */
-function BreakdownPlaceholder() {
+/**
+ * Same silence on the numbers, same shape as the six breakdown tiles.
+ *
+ * Exported for the prerendered `?mine=1` detail page; see RingPlaceholder.
+ */
+export function BreakdownPlaceholder() {
   return (
     <div className="space-y-5">
       <div aria-hidden="true" className="shimmer h-4 w-3/4 rounded-full" />

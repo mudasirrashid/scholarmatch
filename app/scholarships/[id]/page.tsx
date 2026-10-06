@@ -7,9 +7,11 @@ import { EligibilityList } from "@/components/scholarships/detail/eligibility-li
 import { MatchBreakdown } from "@/components/scholarships/detail/match-breakdown";
 import { QuickFacts } from "@/components/scholarships/detail/quick-facts";
 import {
+  BreakdownPlaceholder,
   PersonalisedMatchBreakdown,
   PersonalisedMatchProvider,
   PersonalisedMatchRing,
+  RingPlaceholder,
 } from "@/components/matches/personalised-match";
 import {
   ApplySteps,
@@ -59,10 +61,21 @@ export async function generateMetadata({
     return { title: "Scholarship not found" };
   }
 
-  // Same engine call the page body uses, so the search description quotes the
-  // verdict a visitor actually sees.
-  const match = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
-  const description = `${scholarship.fundingLabel} for ${scholarship.degreeLabel} study in ${scholarship.country}. ${match.summary}`;
+  /*
+   * Built from the record alone, deliberately.
+   *
+   * This route is prerendered, so anything generated here describes the sample
+   * profile, never the reader's. Quoting the engine's verdict put first-person
+   * wording such as "Strong match based on your profile" into link previews and
+   * search snippets, where there is no reader's profile to have matched and no
+   * label to correct it — the sample disclaimer that makes the visible page
+   * honest cannot travel inside a meta description.
+   *
+   * So the description states what the page actually contains. It stays accurate
+   * for every visitor, and the personalised figure remains where it can be
+   * computed and attributed: on the page, after the reader's profile is read.
+   */
+  const description = `${scholarship.fundingLabel} for ${scholarship.degreeLabel} study in ${scholarship.country}. Review eligibility, requirements, funding, deadline and application details.`;
 
   return {
     title: `${scholarship.title} at ${scholarship.organization}`,
@@ -196,15 +209,37 @@ export default async function ScholarshipDetailPage({
             <div className="flex items-start">
               <PersonalisedMatchRing
                 fallback={
-                  <div className="surface-glass edge-highlight relative rounded-3xl p-7 text-center">
-                    <MatchRing score={score} size="lg" label="Overall match" />
+                  /* Two nodes, one of which is shown per context.
 
-                    <p className="mt-4 max-w-[13rem] text-pretty text-[0.8125rem] text-mist-400">
-                      {match.summary}
-                    </p>
+                     `?mine=1` means the visitor followed a card from /matches,
+                     so the sample figure is the wrong number for them and must
+                     not appear at all — not even briefly. The head script flags
+                     the context before the first paint and globals.css swaps
+                     these: the sample card is held back and the neutral
+                     placeholder below stands in until hydration computes the
+                     real result.
 
-                    <SampleProfileNote />
-                  </div>
+                     A bare visit gets the labelled sample card, which is the
+                     honest answer for someone who has not told us anything, and
+                     is also what crawlers and no-JS readers receive. */
+                  <>
+                    <div
+                      data-sample-match=""
+                      className="surface-glass edge-highlight relative rounded-3xl p-7 text-center"
+                    >
+                      <MatchRing score={score} size="lg" label="Overall match" />
+
+                      <p className="mt-4 max-w-[13rem] text-pretty text-[0.8125rem] text-mist-400">
+                        {match.summary}
+                      </p>
+
+                      <SampleProfileNote />
+                    </div>
+
+                    <div data-mine-placeholder aria-hidden="true">
+                      <RingPlaceholder />
+                    </div>
+                  </>
                 }
               />
             </div>
@@ -270,8 +305,12 @@ export default async function ScholarshipDetailPage({
             >
               <PersonalisedMatchBreakdown
                 fallback={
+                  /* Same per-context swap as the ring above; see the comment
+                     there. Both children of each half were already block-level,
+                     so the wrappers add no layout of their own. */
                   <>
-                    <MatchBreakdown match={match} />
+                    <div data-sample-match="">
+                      <MatchBreakdown match={match} />
 
                     {match.missingRequirements.length > 0 ? (
                       <div className="surface-glass mt-6 rounded-2xl p-5">
@@ -294,6 +333,11 @@ export default async function ScholarshipDetailPage({
                         </ul>
                       </div>
                     ) : null}
+                    </div>
+
+                    <div data-mine-placeholder aria-hidden="true">
+                      <BreakdownPlaceholder />
+                    </div>
                   </>
                 }
               />

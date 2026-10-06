@@ -433,6 +433,29 @@
   transition-delay: var(--reveal-delay, 0ms);
 }
 
+/* Sample match holdback ------------------------------------------------------
+   `/scholarships/[id]?mine=1` is asked for by /matches, so the reader expects
+   their own evaluation. That route is prerendered, which means its HTML carries
+   the sample figure; showing it and then swapping would briefly present one
+   person's score to another.
+
+   The head script sets `data-match-context="mine"` before the body is parsed
+   (see app/layout.tsx), so the sample figure is suppressed on the very first
+   paint instead of being replaced on the next one. Scoped to `.js`: with no
+   scripting the attribute is never set, so the labelled sample figure stays on
+   the page as the honest, crawlable answer rather than an empty gap. */
+.js[data-match-context="mine"] [data-sample-match] {
+  display: none;
+}
+
+/* ...and the neutral state that stands in for it until hydration finishes. */
+.js[data-match-context="mine"] [data-mine-placeholder] {
+  display: block;
+}
+[data-mine-placeholder] {
+  display: none;
+}
+
 .js [data-reveal][data-revealed="true"] {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
