@@ -48,7 +48,7 @@ import type {
    ========================================================================== */
 
 /** ScholarMatch-side preparation stages, identical across opportunities. */
-const SHARED_JOURNEY: readonly ApplicationStage[] = [
+export const SHARED_JOURNEY: readonly ApplicationStage[] = [
   {
     index: "01",
     title: "Check eligibility",
@@ -89,7 +89,7 @@ const SHARED_JOURNEY: readonly ApplicationStage[] = [
   },
 ];
 
-const SHARED_MISTAKES: readonly CommonMistake[] = [
+export const SHARED_MISTAKES: readonly CommonMistake[] = [
   {
     id: "late-documents",
     title: "Leaving documents to the last week",

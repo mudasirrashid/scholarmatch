@@ -32,7 +32,7 @@ import { Eyebrow } from "@/components/ui/badge";
 import { activeDemoProfile } from "@/lib/demo/student-profiles";
 import { matchScholarship, toMatchInsights } from "@/lib/matching";
 import { allScholarships, getScholarship } from "@/lib/scholarships";
-import { matchTone } from "@/lib/format";
+import { formatExactDate, matchTone } from "@/lib/format";
 
 /**
  * Every record is prebuilt.
@@ -199,6 +199,18 @@ export default async function ScholarshipDetailPage({
                     className="inline-flex h-11 items-center gap-2 rounded-full border border-hairline bg-white/[0.04] px-5 text-[0.9375rem] text-mist-100 transition-colors duration-200 hover:border-hairline-strong hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
                   >
                     Official page
+                    <ExternalLink className="size-4" aria-hidden="true" />
+                  </a>
+                ) : null}
+
+                {scholarship.officialSource.applicationUrl ? (
+                  <a
+                    href={scholarship.officialSource.applicationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="inline-flex h-11 items-center gap-2 rounded-full bg-white/[0.09] px-5 text-[0.9375rem] font-medium text-mist-50 transition-colors duration-200 hover:bg-white/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                  >
+                    Apply now
                     <ExternalLink className="size-4" aria-hidden="true" />
                   </a>
                 ) : null}
@@ -409,11 +421,34 @@ export default async function ScholarshipDetailPage({
                       <span className="text-mist-50">{scholarship.officialSource.provider}</span>
                     </p>
 
-                    <p className="mt-3 text-[0.8125rem] leading-relaxed text-pretty text-mist-400">
-                      This is illustrative sample content. No official provider link is shown
-                      because none has been verified, so always confirm requirements on the
-                      awarding body&apos;s own site before you invest time in an application.
-                    </p>
+                    {scholarship.officialSource.isDemo ? (
+                      <p className="mt-3 text-[0.8125rem] leading-relaxed text-pretty text-mist-400">
+                        This is illustrative sample content. No official provider link is shown
+                        because none has been verified, so always confirm requirements on the
+                        awarding body&apos;s own site before you invest time in an application.
+                      </p>
+                    ) : (
+                      <div className="mt-3 space-y-3 text-[0.8125rem] leading-relaxed text-pretty text-mist-400">
+                        <p>
+                          Sourced from the provider&apos;s own pages
+                          {scholarship.officialSource.lastVerified ? (
+                            <>
+                              {" "}
+                              and last checked on{" "}
+                              <span className="text-mist-200">
+                                {formatExactDate(scholarship.officialSource.lastVerified)}
+                              </span>
+                            </>
+                          ) : null}
+                          . Requirements change, so re-check anything you rely on with the
+                          awarding body before you apply.
+                        </p>
+
+                        {scholarship.officialSource.notes ? (
+                          <p>{scholarship.officialSource.notes}</p>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

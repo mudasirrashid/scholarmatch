@@ -16,8 +16,9 @@ import type {
 } from "@/types/scholarship";
 import type { StudentProfile } from "@/types/student";
 
-/** Whole days from the shared reference date until the deadline. */
-export function daysUntil(deadline: string): number {
+/** Whole days from the shared reference date until the deadline, or `null`. */
+export function daysUntil(deadline: string | null): number | null {
+  if (deadline === null) return null;
   const reference = new Date(QUERY_REFERENCE_DATE);
   return Math.round((new Date(deadline).getTime() - reference.getTime()) / 86_400_000);
 }
@@ -100,6 +101,9 @@ export function toPreview(
     fundingLabel: scholarship.fundingLabel,
     deadline: scholarship.deadline,
     deadlineInDays: daysUntil(scholarship.deadline),
+    deadlineKind: scholarship.deadlineKind,
+    deadlineNote: scholarship.deadlineNote,
+    isDemo: scholarship.officialSource.isDemo,
     matchScore: match.score,
     tags: scholarship.tags,
     factors: toFactors(match),

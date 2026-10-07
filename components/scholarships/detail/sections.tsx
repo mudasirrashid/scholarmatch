@@ -9,6 +9,20 @@ import type {
   RequiredDocument,
 } from "@/types/scholarship";
 
+/**
+ * Stands in when a provider publishes nothing for a section.
+ *
+ * An empty section reads as a rendering bug; a one-line statement that the
+ * provider simply does not list this reads as what it actually is.
+ */
+function EmptySection({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="surface-glass rounded-2xl p-5 text-[0.9375rem] leading-relaxed text-pretty text-mist-400">
+      {children}
+    </p>
+  );
+}
+
 /** What the money actually covers, component by component. */
 export function FundingBreakdown({
   summary,
@@ -21,21 +35,30 @@ export function FundingBreakdown({
     <div>
       <p className="max-w-2xl text-pretty text-mist-300">{summary}</p>
 
-      <ul className="mt-6 grid gap-4 sm:grid-cols-2">
-        {benefits.map((benefit) => (
-          <li key={benefit.id} className="surface-glass relative overflow-hidden rounded-2xl p-5">
-            <p className="text-sm text-mist-400">{benefit.label}</p>
-            <p className="mt-1.5 font-display text-xl font-normal tracking-[-0.01em] text-mist-50">
-              {benefit.value}
-            </p>
-            {benefit.note ? (
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-pretty text-mist-500">
-                {benefit.note}
+      {benefits.length === 0 ? (
+        <div className="mt-6">
+          <EmptySection>
+            The provider does not break this package down into components. Read the
+            funding summary above, then confirm the details on their own site.
+          </EmptySection>
+        </div>
+      ) : (
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+          {benefits.map((benefit) => (
+            <li key={benefit.id} className="surface-glass relative overflow-hidden rounded-2xl p-5">
+              <p className="text-sm text-mist-400">{benefit.label}</p>
+              <p className="mt-1.5 font-display text-xl font-normal tracking-[-0.01em] text-mist-50">
+                {benefit.value}
               </p>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+              {benefit.note ? (
+                <p className="mt-2 text-[0.8125rem] leading-relaxed text-pretty text-mist-500">
+                  {benefit.note}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -54,6 +77,15 @@ const DOCUMENT_LABEL: Record<DocumentRequirement, string> = {
 
 /** Checklist of what to prepare, so nothing required is discovered late. */
 export function DocumentChecklist({ documents }: { documents: readonly RequiredDocument[] }) {
+  if (documents.length === 0) {
+    return (
+      <EmptySection>
+        The provider does not publish a document list on the page this record was
+        sourced from. Check the required documents on their own site before you start.
+      </EmptySection>
+    );
+  }
+
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {documents.map((document) => (
@@ -86,6 +118,15 @@ export function DocumentChecklist({ documents }: { documents: readonly RequiredD
  * caution for each step attached to that step rather than collected elsewhere.
  */
 export function ApplySteps({ steps }: { steps: readonly HowToApplyStep[] }) {
+  if (steps.length === 0) {
+    return (
+      <EmptySection>
+        The provider publishes its application instructions on its own site rather
+        than in a form we can transcribe. Follow the official page linked above.
+      </EmptySection>
+    );
+  }
+
   return (
     <ol className="grid gap-4 sm:grid-cols-2">
       {steps.map((step) => (
@@ -142,6 +183,15 @@ export function JourneyStages({ stages }: { stages: readonly ApplicationStage[] 
 
 /** Mistakes that cause rejections, each with the alternative that avoids it. */
 export function MistakeList({ mistakes }: { mistakes: readonly CommonMistake[] }) {
+  if (mistakes.length === 0) {
+    return (
+      <EmptySection>
+        The provider does not publish a list of common mistakes for this award.
+        The application guidance on their own site is the authoritative source.
+      </EmptySection>
+    );
+  }
+
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {mistakes.map((mistake) => (

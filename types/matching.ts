@@ -47,6 +47,16 @@ export interface DimensionResult {
   verdict: string;
   /** One line explaining the verdict, present whenever the result needs it. */
   detail?: string;
+  /**
+   * What the student should do about this unknown, when the generic hint is
+   * wrong for the reason the dimension failed.
+   *
+   * A record whose provider states its own academic terms, for example, needs
+   * "compare your transcript with the provider's requirement", not "add your
+   * GPA" — the GPA may already be there. `collectMissing` prefers this over
+   * `MISSING_INFORMATION_HINTS` when both exist.
+   */
+  missing?: string;
 }
 
 /** Why a dimension could not be decided from the profile. */

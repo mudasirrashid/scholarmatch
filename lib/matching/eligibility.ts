@@ -132,10 +132,21 @@ export function evaluateAcademic(gpa: number | undefined, required: GpaRequireme
 export function evaluateNationality(
   citizenship: string | undefined,
   eligibleCountries: readonly string[] | undefined,
+  excludedCountries?: readonly string[],
 ): "eligible" | "restricted_match" | "restricted_mismatch" | "unknown" {
-  // Absent or empty means open to all nationalities.
-  if (eligibleCountries === undefined || eligibleCountries.length === 0) return "eligible";
-  if (citizenship === undefined) return "unknown";
+  const hasAllowList = eligibleCountries !== undefined && eligibleCountries.length > 0;
+  const hasExclusions = excludedCountries !== undefined && excludedCountries.length > 0;
+
+  // Without a declared profile nothing restricted can be ruled in or out.
+  if (citizenship === undefined) {
+    return hasAllowList || hasExclusions ? "unknown" : "eligible";
+  }
+
+  // An explicit exclusion is decisive even when an allow-list also exists.
+  if (hasExclusions && excludedCountries.includes(citizenship)) return "restricted_mismatch";
+
+  // Absent or empty allow-list means open to all nationalities.
+  if (!hasAllowList) return "eligible";
 
   return eligibleCountries.includes(citizenship)
     ? "restricted_match"

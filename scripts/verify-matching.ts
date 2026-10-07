@@ -65,6 +65,14 @@ function resultsFor(profile: (typeof demoProfiles)[number]): MatchResult[] {
   return all.map((scholarship) => matchScholarship(profile, scholarship));
 }
 
+function demosFor(profile: (typeof demoProfiles)[number]): MatchResult[] {
+  return all
+    .filter((scholarship) => scholarship.id.startsWith("demo-"))
+    .map((scholarship) => matchScholarship(profile, scholarship));
+}
+
+const demoRecords = all.filter((scholarship) => scholarship.id.startsWith("demo-"));
+
 /* ==========================================================================
    1. Weights
    ========================================================================== */
@@ -205,8 +213,24 @@ check(
 );
 
 check(
-  "a full evaluation of a complete profile is unadjusted",
-  resultsFor(profileA).every((match) => evaluationCoverage(match.dimensions) === 1),
+  "a full evaluation of a complete profile is unadjusted (structured GPA)",
+  all
+    .filter((scholarship) => scholarship.gpa !== null)
+    .every(
+      (scholarship) =>
+        evaluationCoverage(matchScholarship(profileA, scholarship).dimensions) === 1,
+    ),
+  true,
+);
+check(
+  "a provider-stated academic requirement surfaces as unknown information",
+  all
+    .filter((scholarship) => scholarship.gpa === null)
+    .every(
+      (scholarship) =>
+        matchScholarship(profileA, scholarship).dimensions.find((d) => d.id === "academic")
+          ?.status === "not_specified",
+    ),
   true,
 );
 
@@ -258,8 +282,10 @@ check(
   true,
 );
 check(
-  "no result is left as unknown information",
-  aResults.every((match) => match.missingInformation.length === 0),
+  "no result with a structured GPA is left as unknown information",
+  all
+    .filter((scholarship) => scholarship.gpa !== null)
+    .every((scholarship) => matchScholarship(profileA, scholarship).missingInformation.length === 0),
   true,
 );
 check(
@@ -288,17 +314,30 @@ section("Profile B - incomplete profile");
 const bResults = resultsFor(profileB);
 
 // Five of the six dimensions depend on a profile input B has not supplied, so
-// they must all resolve to unknown. Eligibility is the exception: nationality
-// is unrestricted on every demo record, so that part is genuinely satisfiable
-// without any profile detail at all.
+// they must all resolve to unknown. A record with no GPA requirement is the one
+// exception: its academic dimension is genuinely satisfied with no profile
+// detail at all, so that case is scoped out below.
 check(
   "every profile-dependent dimension is reported as unknown",
-  bResults.every((match) =>
+  demosFor(profileB).every((match) =>
     ["academic", "field", "degree", "experience", "preferences"].every(
       (id) =>
         match.dimensions.find((dimension) => dimension.id === id)?.status === "not_specified",
     ),
   ),
+  true,
+);
+check(
+  "a record with no GPA requirement is the only empty-profile academic exception",
+  all
+    .filter((scholarship) => scholarship.gpa !== 0)
+    .every((scholarship) => {
+      const match = matchScholarship(profileB, scholarship);
+      return (
+        match.dimensions.find((dimension) => dimension.id === "academic")?.status ===
+        "not_specified"
+      );
+    }),
   true,
 );
 check(
@@ -316,13 +355,20 @@ check(
 );
 check("missing information is always reported", bResults.every((match) => match.missingInformation.length > 0), true);
 check(
-  "an empty profile cannot post a confident score",
-  bResults.every((match) => match.score < 40),
+  "an empty profile cannot post a confident score where a GPA floor exists",
+  all
+    .filter((scholarship) => scholarship.gpa !== 0)
+    .every((scholarship) => matchScholarship(profileB, scholarship).score < 40),
   true,
 );
 check(
-  "coverage of an empty profile is near zero",
-  bResults.every((match) => evaluationCoverage(match.dimensions) < 0.3),
+  "coverage of an empty profile is near zero where a GPA floor exists",
+  all
+    .filter((scholarship) => scholarship.gpa !== 0)
+    .every(
+      (scholarship) =>
+        evaluationCoverage(matchScholarship(profileB, scholarship).dimensions) < 0.3,
+    ),
   true,
 );
 
@@ -334,7 +380,14 @@ section("Profile C - below the academic floor");
 
 const cResults = resultsFor(profileC);
 
+// Records with a provider-stated GPA (no numeric floor) resolve academic as
+// unknown rather than pass/fail, so the floor-specific checks below only
+// apply where a numeric floor exists to be missed.
 const cIneligible = cResults.filter((match) => !match.eligibility.isEligible);
+const cIneligibleWithFloor = all
+  .filter((scholarship) => scholarship.gpa !== null)
+  .map((scholarship) => matchScholarship(profileC, scholarship))
+  .filter((match) => !match.eligibility.isEligible);
 
 // The 2.5-floor record is the interesting case: 2.3 is within 0.5 of the
 // requirement, so the engine reports a near miss worth a conversation rather
@@ -349,7 +402,7 @@ const cNearMisses = cResults.filter((match) =>
 check("every record is ruled out or flagged", cResults.length, all.length);
 check(
   "the GPA fails the academic dimension wherever the floor is not met",
-  cIneligible.every(
+  cIneligibleWithFloor.every(
     (match) =>
       match.dimensions.find((dimension) => dimension.id === "academic")?.status === "not_eligible",
   ),
@@ -357,7 +410,7 @@ check(
 );
 check(
   "hard failures are reported by name",
-  cIneligible.every((match) => match.eligibility.hardFailures.includes("Academic")),
+  cIneligibleWithFloor.every((match) => match.eligibility.hardFailures.includes("Academic")),
   true,
 );
 check("a near miss exists to be caught", cNearMisses.length, 1);
@@ -398,9 +451,9 @@ const medicineIds = new Set(
 
 check(
   "awards covering Medicine rank above awards that do not",
-  rankScholarships(profileD, all)
+  rankScholarships(profileD, demoRecords)
     .filter((entry) => medicineIds.has(entry.scholarship.id))
-    .every((entry) => entry.rank <= 3),
+    .every((entry) => entry.rank <= demoRecords.filter((s) => medicineIds.has(s.id)).length),
   true,
 );
 // A wrong field is the softest signal there is: it should lower the score and be
@@ -590,7 +643,7 @@ check("a non-matching code is refused", evaluateNationality("DE", ["NG", "GB"]),
 check("an unknown citizenship stays unknown", evaluateNationality(undefined, ["NG"]), "unknown");
 check(
   "the demo records restrict nobody",
-  all.every(
+  demoRecords.every(
     (scholarship) =>
       scholarship.eligibleCountries === undefined || scholarship.eligibleCountries.length === 0,
   ),

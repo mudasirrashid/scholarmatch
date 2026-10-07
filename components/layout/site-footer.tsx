@@ -117,8 +117,9 @@ export function SiteFooter() {
             </p>
 
             <p className="max-w-md text-xs leading-relaxed text-mist-600">
-              Preview build. Content on this page is illustrative and does not
-              represent live scholarship data.
+              Preview build. Sample records are illustrative; sourced records are
+              transcribed from official provider pages. Always confirm requirements
+              with the awarding body.
             </p>
           </div>
         </div>

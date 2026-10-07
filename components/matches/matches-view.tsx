@@ -104,13 +104,14 @@ function MatchesViewInner() {
           </p>
 
           {/*
-            The same disclosure the explorer and detail pages carry. These scores
-            are produced from illustrative sample records, so a personalised page
-            must not read as though it is quoting a live provider's requirements.
+            The same disclosure the explorer and detail pages carry. Scores are
+            computed from each record's published requirements — sample records
+            are illustrative, sourced records transcribe the provider's own
+            pages — so a personalised page must not read as a live guarantee.
           */}
           <p className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-pretty text-mist-500">
-            Every opportunity here is illustrative sample content scored from the
-            requirements a provider publishes. Confirm anything you rely on against the
+            Sample records are illustrative; sourced records reflect what the provider
+            published when we last checked. Confirm anything you rely on against the
             awarding body&apos;s own site.
           </p>
 

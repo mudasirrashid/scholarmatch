@@ -47,7 +47,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/scholarships/${scholarship.id}`,
       // The dataset carries a real publication date per record, so crawlers see
       // when the entry was added rather than when the site last deployed.
-      lastModified: new Date(scholarship.postedAt),
+      // Sourced records that state no publication date omit the hint rather
+      // than claiming an epoch or a deploy date they never had.
+      lastModified: scholarship.postedAt ? new Date(scholarship.postedAt) : undefined,
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),

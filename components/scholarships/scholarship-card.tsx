@@ -4,7 +4,13 @@ import Link from "next/link";
 import { SaveButton } from "@/components/scholarships/save-button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
-import { formatDeadline, formatExactDate, isUrgent, matchTone } from "@/lib/format";
+import {
+  formatDeadline,
+  formatExactDate,
+  formatOpenDeadline,
+  isUrgent,
+  matchTone,
+} from "@/lib/format";
 import type { ScholarshipPreview } from "@/types/scholarship";
 
 /**
@@ -44,13 +50,15 @@ export function ScholarshipCard({
   fields,
   fundingLabel,
   deadline,
+  deadlineKind,
   deadlineInDays,
+  isDemo,
   tags,
 } =
     scholarship;
 
   const tone = matchTone(matchScore);
-  const urgent = isUrgent(deadlineInDays);
+  const urgent = deadlineInDays !== null && isUrgent(deadlineInDays);
 
   return (
     <article
@@ -157,6 +165,11 @@ export function ScholarshipCard({
             {fundingLabel}
           </Badge>
           <Badge>{degreeLabel}</Badge>
+          {/* Provenance, so a sourced record never reads as illustrative and a
+              sample record never reads as a live provider's terms. */}
+          <Badge tone={isDemo ? "neutral" : "accent"}>
+            {isDemo ? "Sample" : "Official source"}
+          </Badge>
         </div>
 
         {fields.length > 0 ? (
@@ -198,13 +211,21 @@ export function ScholarshipCard({
               )}
             >
               <Clock className="size-3.5 shrink-0" aria-hidden="true" />
-              {/* Relative urgency first, then the exact date, so the day is
-                  never hidden behind a rounded "3 months left". */}
-              <span className="shrink-0">{formatDeadline(deadlineInDays)}</span>
-              <span className="shrink-0 text-mist-600">·</span>
-              <time dateTime={deadline} className="min-w-0 truncate text-mist-500">
-                {formatExactDate(deadline)}
-              </time>
+              {deadline === null ? (
+                /* No countdown exists, so the card states the provider's kind
+                   instead of rendering an empty clock row. */
+                <span className="min-w-0 truncate">{formatOpenDeadline(deadlineKind)}</span>
+              ) : (
+                <>
+                  {/* Relative urgency first, then the exact date, so the day is
+                      never hidden behind a rounded "3 months left". */}
+                  <span className="shrink-0">{formatDeadline(deadlineInDays ?? 0)}</span>
+                  <span className="shrink-0 text-mist-600">·</span>
+                  <time dateTime={deadline} className="min-w-0 truncate text-mist-500">
+                    {formatExactDate(deadline)}
+                  </time>
+                </>
+              )}
             </span>
 
             <div className="flex items-center justify-between gap-3">

@@ -10,27 +10,43 @@
  * and the score used for ranking are all the same computation.
  */
 
-import { scholarships } from "@/lib/demo/data";
+import { scholarships as demoScholarships } from "@/lib/demo/data";
+import { realScholarships } from "@/lib/real";
 import { deadlineWindow } from "@/lib/scholarships/query";
-import type { DegreeFilter } from "@/types/scholarship";
+import type { DegreeFilter, Scholarship } from "@/types/scholarship";
 
 export { daysUntil, scoreForStatus, toPreview, toPreviewFromMatch } from "@/lib/scholarships/preview";
 
+/**
+ * Demo fixtures first, sourced records after.
+ *
+ * The demo records keep their authored positions so every existing surface
+ * (homepage showcase, explorer defaults, saved ordering) renders exactly what
+ * it did before real records existed, and the sourced records join behind them.
+ * Built once and reused: every read helper below would otherwise rebuild the
+ * merge for a single page render.
+ */
+let merged: readonly Scholarship[] | undefined;
+function collection(): readonly Scholarship[] {
+  merged ??= [...demoScholarships, ...realScholarships()];
+  return merged;
+}
+
 /** Every record, in authored order. */
 export function allScholarships() {
-  return scholarships;
+  return collection();
 }
 
 /** Looks up a single record by id. Returns undefined for unknown ids. */
 export function getScholarship(id: string) {
-  return scholarships.find((scholarship) => scholarship.id === id);
+  return collection().find((scholarship) => scholarship.id === id);
 }
 
 /** Distinct degree levels present in the dataset, in canonical order. */
 export function availableDegrees(): DegreeFilter[] {
   const order: DegreeFilter[] = ["bachelors", "masters", "doctorate"];
   return order.filter((level) =>
-    scholarships.some((scholarship) =>
+    collection().some((scholarship) =>
       (scholarship.degreeLevels as readonly DegreeFilter[]).includes(level),
     ),
   );
@@ -44,7 +60,7 @@ export function availableDegrees(): DegreeFilter[] {
  */
 export function availableFields(): string[] {
   return [
-    ...new Set(scholarships.flatMap((scholarship) => scholarship.fields.map((f) => f.toLowerCase()))),
+    ...new Set(collection().flatMap((scholarship) => scholarship.fields.map((f) => f.toLowerCase()))),
   ].sort();
 }
 
@@ -56,13 +72,13 @@ export function availableFields(): string[] {
  */
 export function availableCountries(): string[] {
   return [
-    ...new Set(scholarships.map((scholarship) => scholarship.country.toLowerCase())),
+    ...new Set(collection().map((scholarship) => scholarship.country.toLowerCase())),
   ].sort();
 }
 
 /** Turns a normalised field or country token into its display form. */
 export function fieldLabel(token: string): string {
-  const match = scholarships
+  const match = collection()
     .flatMap((scholarship) => [...scholarship.fields, scholarship.country])
     .find((value) => value.toLowerCase() === token.toLowerCase());
 
@@ -72,7 +88,7 @@ export function fieldLabel(token: string): string {
 /** Deadline buckets that at least one record falls into, in bucket order. */
 export function availableDeadlineWindows(): string[] {
   const present = new Set(
-    scholarships.map((scholarship) => deadlineWindow(scholarship.deadline)),
+    collection().map((scholarship) => deadlineWindow(scholarship.deadline)),
   );
   return (["closing_soon", "this_month", "next_three_months", "later"] as const).filter((window) =>
     present.has(window),

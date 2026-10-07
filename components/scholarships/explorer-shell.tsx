@@ -87,7 +87,7 @@ export function ExplorerShell({
                 <p className="mt-2 text-sm text-pretty text-mist-500">
                   {narrowed
                     ? "Showing opportunities relevant to your selected criteria."
-                    : "Showing every opportunity currently open to applications."}
+                    : "Showing every opportunity in the collection, open or not."}
                 </p>
               </div>
 

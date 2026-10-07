@@ -2,7 +2,12 @@ import { Banknote, Clock, GraduationCap, MapPin, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { daysUntil } from "@/lib/scholarships";
-import { formatDeadline, formatExactDate, isUrgent } from "@/lib/format";
+import {
+  formatDeadline,
+  formatExactDate,
+  formatOpenDeadline,
+  isUrgent,
+} from "@/lib/format";
 import type { Scholarship } from "@/types/scholarship";
 
 /**
@@ -41,7 +46,7 @@ function Fact({
 /** The scannable summary block beside the match ring. */
 export function QuickFacts({ scholarship }: { scholarship: Scholarship }) {
   const days = daysUntil(scholarship.deadline);
-  const urgent = isUrgent(days);
+  const urgent = days !== null && isUrgent(days);
 
   return (
     <dl className="grid gap-5 sm:grid-cols-2">
@@ -64,11 +69,26 @@ export function QuickFacts({ scholarship }: { scholarship: Scholarship }) {
         {scholarship.fundingLabel}
       </Fact>
 
-      <Fact icon={Clock} term="Closes" tone={urgent ? "caution" : undefined}>
-        <time dateTime={scholarship.deadline}>
-          {formatExactDate(scholarship.deadline)}
-        </time>
-        <span className="text-mist-500"> &middot; {formatDeadline(days)}</span>
+      <Fact
+        icon={Clock}
+        term={scholarship.deadline === null ? "Deadline" : "Closes"}
+        tone={urgent ? "caution" : undefined}
+      >
+        {scholarship.deadline === null ? (
+          <span>{formatOpenDeadline(scholarship.deadlineKind)}</span>
+        ) : (
+          <>
+            <time dateTime={scholarship.deadline}>
+              {formatExactDate(scholarship.deadline)}
+            </time>
+            <span className="text-mist-500"> &middot; {formatDeadline(days ?? 0)}</span>
+          </>
+        )}
+        {scholarship.deadlineNote ? (
+          <span className="block text-[0.8125rem] leading-relaxed text-pretty text-mist-500">
+            {scholarship.deadlineNote}
+          </span>
+        ) : null}
       </Fact>
 
       <Fact icon={Wallet} term="Application fee">

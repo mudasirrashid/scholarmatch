@@ -1,5 +1,7 @@
 /** Presentation helpers shared across scholarship surfaces. */
 
+import type { DeadlineKind } from "@/types/scholarship";
+
 /**
  * Formats a remaining-days count as a short, human deadline label.
  *
@@ -42,6 +44,25 @@ export function formatExactDate(iso: string): string {
 /** True when the closing date is close enough to warrant a caution tone. */
 export function isUrgent(days: number): boolean {
   return days > 0 && days <= 21;
+}
+
+/**
+ * Short label for a record that publishes no single closing date.
+ *
+ * Each phrase mirrors the provider's own kind rather than inventing a date,
+ * so a card never implies a countdown the provider did not commit to.
+ */
+export function formatOpenDeadline(kind: DeadlineKind | undefined): string {
+  switch (kind) {
+    case "rolling":
+      return "Rolling applications";
+    case "varies":
+      return "Dates vary";
+    case "unknown":
+      return "Deadline not announced";
+    default:
+      return "No fixed deadline";
+  }
 }
 
 /** Maps a 0-100 match score to the token used for its accent treatment. */

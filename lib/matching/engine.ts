@@ -98,6 +98,8 @@ interface Evaluation {
   detail?: string;
   /** Profile field that would resolve an unknown result. */
   needs?: keyof typeof MISSING_INFORMATION_HINTS;
+  /** Overrides the generic missing hint when the default one misleads. */
+  missing?: string;
 }
 
 function evaluateAcademicDimension(
@@ -106,6 +108,22 @@ function evaluateAcademicDimension(
 ): Evaluation {
   const gpa = profile.academic?.gpa;
   const required = scholarship.gpa;
+
+  /*
+   * The provider publishes its own academic terms ("2:1", "upper third",
+   * "minimum 70%") instead of a 4.0-scale number. Comparing a GPA against that
+   * would be arithmetic on incompatible units, so the dimension reports that it
+   * cannot be judged and asks the student to check their transcript against the
+   * provider's own requirement — not to add a GPA they may already have given.
+   */
+  if (required === null) {
+    return {
+      verdict: "Provider sets its own bar",
+      score: null,
+      detail: `This provider publishes its own academic requirement: ${scholarship.gpaLabel}.`,
+      missing: `Compare your transcript with this provider's own academic requirement (${scholarship.gpaLabel}) to see whether you clear it.`,
+    };
+  }
 
   if (gpa === undefined && required !== 0) {
     return { verdict: "Needs your GPA", score: null, detail: `This award asks for ${scholarship.gpaLabel}.`, needs: "gpa" };
@@ -232,6 +250,7 @@ function evaluateEligibilityDimension(
   const nationality = evaluateNationality(
     profile.eligibility?.citizenship,
     scholarship.eligibleCountries,
+    scholarship.excludedCountries,
   );
   switch (nationality) {
     case "eligible":
@@ -446,6 +465,7 @@ function buildDimension(
     weight,
     verdict: evaluation.verdict,
     detail: evaluation.detail,
+    missing: evaluation.missing,
   };
 }
 
@@ -531,7 +551,10 @@ function collectMissing(
   const fromDimensions = dimensions
     .filter((dimension) => dimension.status === "not_specified")
     .map((dimension) => {
-      const hint = MISSING_INFORMATION_HINTS[missingKeyFor(dimension.id)];
+      // A dimension that knows why it could not decide says so itself; the
+      // generic hint is only a fallback.
+      const hint =
+        dimension.missing ?? MISSING_INFORMATION_HINTS[missingKeyFor(dimension.id)];
       return hint ?? `${dimension.label} information would sharpen this score.`;
     });
 

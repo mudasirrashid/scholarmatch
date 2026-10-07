@@ -61,10 +61,24 @@ export interface ScholarshipPreview {
   fields: readonly string[];
   funding: FundingType;
   fundingLabel: string;
-  /** Exact closing date as an ISO `YYYY-MM-DD` string, for the visible date. */
-  deadline: string;
-  /** Whole days remaining until the closing date. Demo-only in Phase 01. */
-  deadlineInDays: number;
+  /**
+   * Exact closing date as an ISO `YYYY-MM-DD` string, for the visible date.
+   *
+   * `null` when the provider publishes no single date (rolling, varying by
+   * institution, or simply not announced yet); the reason then travels on
+   * `deadlineKind`/`deadlineNote` so the card can say why instead of guessing.
+   */
+  deadline: string | null;
+  /** Whole days remaining until the closing date. `null` when there is no date. */
+  deadlineInDays: number | null;
+  /** Why `deadline` is `null`, when the provider says why. */
+  deadlineKind?: DeadlineKind;
+  /** The provider's own wording for a non-exact deadline. */
+  deadlineNote?: string;
+  /** ISO date this record was last checked against the provider's own pages. Set only for sourced records. */
+  lastVerified?: string;
+  /** Whether this record is illustrative rather than sourced. */
+  isDemo: boolean;
   /** Overall fit score, 0 to 100. */
   matchScore: number;
   tags: readonly string[];
@@ -177,6 +191,14 @@ export type FundingTier =
 /** Deadline proximity buckets, evaluated against a fixed reference date. */
 export type DeadlineWindow = "closing_soon" | "this_month" | "next_three_months" | "later";
 
+/**
+ * Why a record carries no exact closing date, as the provider states it.
+ *
+ * Only meaningful alongside `deadline === null`: an exact date never needs a
+ * kind, because the date explains itself.
+ */
+export type DeadlineKind = "rolling" | "varies" | "unknown";
+
 /** Sort orders offered on the explorer. */
 export type SortKey = "best_match" | "deadline_soon" | "newest" | "fully_funded" | "relevant";
 
@@ -255,8 +277,15 @@ export interface EligibilityCriterion {
   label: string;
   /** The requirement as the provider states it. */
   value: string;
-  /** Whether the demo profile appears to satisfy it. */
-  status: EligibilityStatus;
+  /**
+   * Whether a profile appears to satisfy it.
+   *
+   * Authored only on demo records, where the illustrative profile's verdict was
+   * written by hand. Sourced records omit it and the UI renders no badge, so a
+   * real provider's requirement is never shown carrying a verdict no student
+   * produced.
+   */
+  status?: EligibilityStatus;
   /** Optional remediation hint shown when `status` is `review`. */
   detail?: string;
 }
@@ -301,7 +330,18 @@ export interface OfficialSource {
    */
   verifiedUrl?: string;
   /** Whether this record is illustrative rather than sourced. */
-  isDemo: true;
+  isDemo: boolean;
+  /** What kind of body published the source page. Sourced records only. */
+  sourceType?: "provider" | "university" | "government" | "partner";
+  /**
+   * Where the student actually submits, when it differs from `verifiedUrl`.
+   * Sourced records only; the UI offers it as the "Apply now" link.
+   */
+  applicationUrl?: string;
+  /** ISO date the record was last checked against the provider's own pages. Set only for sourced records. */
+  lastVerified?: string;
+  /** Provider wording that could not be reduced to a field, e.g. country notes. */
+  notes?: string;
 }
 
 /**
@@ -336,13 +376,22 @@ export interface Scholarship {
   fundingSummary: string;
   benefits: readonly FundingBenefit[];
 
-  /** ISO date the applications close. */
-  deadline: string;
+  /** ISO date the applications close, or `null` when no single date exists. */
+  deadline: string | null;
+  /** Why `deadline` is `null`, taken from the provider's own wording. */
+  deadlineKind?: DeadlineKind;
+  /** The provider's own note alongside the deadline, e.g. a closing time or why no date exists. Shown next to the visible deadline on the card. */
+  deadlineNote?: string;
   /** ISO date the award was first published, used by the "Newest" sort. */
-  postedAt: string;
+  postedAt: string | null;
 
-  gpa: GpaRequirement;
-  /** Rendered eligibility floor, e.g. "3.5+ GPA". */
+  /**
+   * Academic floor on the 4.0 scale, or `null` when the provider states its
+   * own requirement in its own terms ("2:1", "upper third", "%70") rather than
+   * a number the engine could compare honestly. `0` means no floor exists.
+   */
+  gpa: GpaRequirement | null;
+  /** Rendered eligibility floor, e.g. "3.5+ GPA" or the provider's own wording. */
   gpaLabel: string;
 
   /**
@@ -361,6 +410,11 @@ export interface Scholarship {
    * prose is for humans, this field is for the engine.
    */
   eligibleCountries?: readonly string[];
+  /**
+   * ISO 3166-1 alpha-2 codes the award excludes explicitly, e.g. home-country
+   * or "no offer available" lists. Checked before `eligibleCountries`.
+   */
+  excludedCountries?: readonly string[];
   languageTests: readonly LanguageTest[];
   /** Minimum scores the provider accepts, per test. */
   languageRequirements?: LanguageRequirement;

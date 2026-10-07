@@ -35,6 +35,13 @@ function compare(a: MatchResult, b: MatchResult): number {
   return 0;
 }
 
+/** Deadline as a sortable number; records with no date rank behind dated ones. */
+function deadlineKey(scholarship: Scholarship): number {
+  return scholarship.deadline === null
+    ? Number.POSITIVE_INFINITY
+    : new Date(scholarship.deadline).getTime();
+}
+
 /**
  * Ranks a set of scholarships for a profile.
  *
@@ -52,10 +59,11 @@ export function rankScholarships(
       const byMatch = compare(left.match, right.match);
       if (byMatch !== 0) return byMatch;
 
-      // Deadline, then id, keep the order stable and reproducible.
-      const byDeadline =
-        new Date(left.scholarship.deadline).getTime() - new Date(right.scholarship.deadline).getTime();
-      if (byDeadline !== 0) return byDeadline;
+      // Deadline, then id, keep the order stable and reproducible. Two records
+      // without a date tie here rather than producing `Infinity - Infinity`.
+      const leftDeadline = deadlineKey(left.scholarship);
+      const rightDeadline = deadlineKey(right.scholarship);
+      if (leftDeadline !== rightDeadline) return leftDeadline - rightDeadline;
 
       return left.scholarship.id.localeCompare(right.scholarship.id);
     });

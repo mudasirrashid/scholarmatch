@@ -83,18 +83,23 @@ check("default query returns all", runQuery(all, DEFAULT_QUERY, lookup).length, 
 /* 8. Every preview card carries the fields and exact deadline the card renders. */
 const previews = all.map((scholarship) => toPreviewFromMatch(scholarship, activeDemoProfile));
 check(
-  "every preview has a field",
-  previews.every((p) => Array.isArray(p.fields) && p.fields.length > 0),
+  "every preview carries a fields array",
+  previews.every((p) => Array.isArray(p.fields)),
   true,
 );
 check(
-  "every preview has an ISO deadline",
-  previews.every((p) => /^\d{4}-\d{2}-\d{2}$/.test(p.deadline)),
+  "every preview deadline is an ISO date or null",
+  previews.every((p) => p.deadline === null || /^\d{4}-\d{2}-\d{2}$/.test(p.deadline)),
+  true,
+);
+check(
+  "every null deadline carries a kind and note",
+  previews.every((p) => p.deadline !== null || (p.deadlineKind !== undefined && !!p.deadlineNote)),
   true,
 );
 
-/* 9. Record count is within the requested range. */
-check("record count is 8-12", all.length >= 8 && all.length <= 12, true);
+/* 9. Record count: 12 demo records plus 8 sourced records. */
+check("record count is 20", all.length === 20, true);
 console.log(`      (actual: ${all.length})`);
 
 /* 10. A no-match query yields zero, which is what the empty state renders. */

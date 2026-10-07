@@ -25,15 +25,20 @@ export function EligibilityList({ criteria }: { criteria: readonly EligibilityCr
   return (
     <ul className="grid gap-4 sm:grid-cols-2">
       {criteria.map((criterion) => {
-        const { label, tone, Icon } = STATUS_META[criterion.status];
+        // Sourced records carry no authored verdict, so they render the
+        // requirement without a badge rather than a verdict nobody produced.
+        const status = criterion.status;
+        const meta = status === undefined ? undefined : STATUS_META[status];
 
         return (
           <li key={criterion.id} className="surface-glass relative overflow-hidden rounded-2xl p-5">
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-sm font-medium text-mist-100">{criterion.label}</h3>
-              <Badge tone={tone} icon={<Icon className="size-3" aria-hidden="true" />}>
-                {label}
-              </Badge>
+              {meta ? (
+                <Badge tone={meta.tone} icon={<meta.Icon className="size-3" aria-hidden="true" />}>
+                  {meta.label}
+                </Badge>
+              ) : null}
             </div>
 
             <p className="mt-2.5 text-[0.9375rem] text-pretty text-mist-300">{criterion.value}</p>

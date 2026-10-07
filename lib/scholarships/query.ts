@@ -32,7 +32,7 @@ export type RawSearchParams = Record<string, string | string[] | undefined>;
  * and a server render matches the client exactly. A real deployment would
  * pass the build or request time here.
  */
-export const QUERY_REFERENCE_DATE = "2026-10-04";
+export const QUERY_REFERENCE_DATE = "2026-10-06";
 
 const DEGREE_FILTERS: readonly DegreeFilter[] = ["bachelors", "masters", "doctorate"];
 const FUNDING_TIERS: readonly FundingTier[] = [
@@ -186,13 +186,40 @@ function daysBetween(from: Date, to: Date): number {
   return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
 
-/** Which deadline bucket a record falls into, relative to the reference date. */
-export function deadlineWindow(deadline: string): DeadlineWindow {
+/**
+ * Which deadline bucket a record falls into, relative to the reference date.
+ *
+ * Returns `null` for a record with no single closing date: "closes in N days"
+ * is not a question that can be answered about a rolling or not-yet-announced
+ * deadline, so it belongs to no bucket rather than to the nearest-sounding one.
+ */
+export function deadlineWindow(deadline: string | null): DeadlineWindow | null {
+  if (deadline === null) return null;
   const days = daysBetween(new Date(QUERY_REFERENCE_DATE), new Date(deadline));
   if (days <= 21) return "closing_soon";
   if (days <= 31) return "this_month";
   if (days <= 92) return "next_three_months";
   return "later";
+}
+
+/** Sort key for a closing date; records without one sort last. */
+function deadlineSortValue(deadline: string | null): number {
+  return deadline === null ? Number.POSITIVE_INFINITY : new Date(deadline).getTime();
+}
+
+/** Sort key for a publication date; records without one sort last. */
+function postedSortValue(postedAt: string | null): number {
+  return postedAt === null ? Number.NEGATIVE_INFINITY : new Date(postedAt).getTime();
+}
+
+/**
+ * Orders two sort keys, treating equal sentinels as equal.
+ *
+ * `Infinity - Infinity` is `NaN`, which a sort comparator must not return, so
+ * two records that both lack a date compare as tied instead of as broken.
+ */
+function compareKeys(a: number, b: number): number {
+  return a === b ? 0 : a - b;
 }
 
 /** True when the record accepts a language test waiver instead of a test. */
@@ -258,14 +285,19 @@ export function filterScholarships(
     }
 
     if (query.deadlines.length) {
-      if (!query.deadlines.includes(deadlineWindow(scholarship.deadline))) return false;
+      const window = deadlineWindow(scholarship.deadline);
+      // A record with no exact date answers no deadline filter, however it is
+      // worded — the filter is a question about timing this record cannot take.
+      if (window === null || !query.deadlines.includes(window)) return false;
     }
 
     if (query.gpa.length) {
       // A record satisfies the group if it meets the *lowest* selected floor,
-      // because every level above that floor also meets it.
+      // because every level above that floor also meets it. A record whose
+      // provider states its own terms publishes no floor to compare, so it
+      // cannot answer the filter and is left out while the filter is active.
       const floor = Math.min(...query.gpa);
-      if (scholarship.gpa > floor) return false;
+      if (scholarship.gpa === null || scholarship.gpa > floor) return false;
     }
 
     if (query.language.length) {
@@ -310,13 +342,13 @@ export function sortScholarships(
 
   switch (sort) {
     case "deadline_soon":
-      return sorted.sort(
-        (a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime(),
+      return sorted.sort((a, b) =>
+        compareKeys(deadlineSortValue(a.deadline), deadlineSortValue(b.deadline)),
       );
 
     case "newest":
-      return sorted.sort(
-        (a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime(),
+      return sorted.sort((a, b) =>
+        compareKeys(postedSortValue(b.postedAt), postedSortValue(a.postedAt)),
       );
 
     case "fully_funded":
@@ -334,7 +366,9 @@ export function sortScholarships(
     default:
       return sorted.sort((a, b) => {
         const delta = lookup(b).score - lookup(a).score;
-        return delta !== 0 ? delta : new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        return delta !== 0
+          ? delta
+          : compareKeys(deadlineSortValue(a.deadline), deadlineSortValue(b.deadline));
       });
   }
 }

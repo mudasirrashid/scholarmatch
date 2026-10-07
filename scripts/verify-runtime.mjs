@@ -24,14 +24,14 @@ async function get(path) {
 
 /** Ids present in the server HTML, in document order and de-duplicated. */
 function resultIds(html) {
-  return [...new Set(html.match(/\/scholarships\/(demo-[a-z0-9-]+)/g) ?? [])].map((href) =>
+  return [...new Set(html.match(/\/scholarships\/([a-z0-9-]+)/g) ?? [])].map((href) =>
     href.split("/").pop(),
   );
 }
 
 const all = await get("/scholarships");
 check("explorer returns 200", all.status, 200);
-check("all 12 records render without JavaScript", resultIds(all.html).length, 12);
+check("all 20 records render without JavaScript", resultIds(all.html).length, 20);
 
 /* Server-side filtering: a country filter must shrink the HTML result set. */
 const canada = await get("/scholarships?country=canada");
@@ -79,21 +79,31 @@ check(
   resultIds(twoDegrees.html),
 );
 
-/* The no-language-test filter must actually return its record. */
+/* The no-language-test filter must return every test-free record. */
 const noTest = await get("/scholarships?lang=none");
 check(
-  "lang=none returns exactly the test-free record",
-  resultIds(noTest.html),
-  ["demo-clinical-research"],
+  "lang=none returns every test-free record",
+  resultIds(noTest.html).length > 1,
+  true,
+);
+check(
+  "lang=none includes the demo test-free record",
+  resultIds(noTest.html).includes("demo-clinical-research"),
+  true,
+);
+check(
+  "lang=none excludes the IELTS/TOEFL record",
+  resultIds(noTest.html).includes("daad-epos"),
+  false,
 );
 
 /* An unknown value must not be treated as "no filter". */
 const junk = await get("/scholarships?degree=underwater%20basket%20weaving");
-check("unknown filter value falls back to the full set", resultIds(junk.html).length, 12);
+check("unknown filter value falls back to the full set", resultIds(junk.html).length, 20);
 
 /* Free text search. */
 const search = await get("/scholarships?q=medicine");
-check("q=medicine narrows results", resultIds(search.html).length < 12, true);
+check("q=medicine narrows results", resultIds(search.html).length < 20, true);
 
 /* An impossible combination renders the empty state. */
 const empty = await get("/scholarships?country=canada&funding=stipend");
@@ -108,7 +118,7 @@ const byDeadline = await get("/scholarships?sort=deadline_soon");
 check(
   "sort=deadline_soon preserves every record",
   resultIds(byDeadline.html).length,
-  12,
+  20,
 );
 check(
   "sort=deadline_soon reorders versus default",
@@ -187,9 +197,9 @@ check("sitemap lists the homepage", sitemap.html.includes("<loc>https://www.scho
 check("sitemap lists the explorer", sitemap.html.includes("<loc>https://www.scholarmatch.me/scholarships</loc>"), true);
 check("sitemap lists the personalised route", sitemap.html.includes("<loc>https://www.scholarmatch.me/matches</loc>"), true);
 check(
-  "sitemap lists all 12 detail urls",
-  (sitemap.html.match(/\/scholarships\/demo-/g) ?? []).length,
-  12,
+  "sitemap lists all 20 detail urls",
+  (sitemap.html.match(/\/scholarships\/[a-z0-9-]+<\/loc>/g) ?? []).length,
+  20,
 );
 
 /* Homepage conversion action now leads somewhere real. */
