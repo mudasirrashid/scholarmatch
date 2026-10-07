@@ -20,6 +20,8 @@ import { isProvisional, profileCompletion } from "@/lib/profile/completion";
 import type { MatchInsights } from "@/types/scholarship";
 import type { Scholarship } from "@/types/scholarship";
 import type { ProfileCompletion } from "@/lib/profile/completion";
+import type { MatchResult } from "@/types/matching";
+import type { StudentProfile } from "@/types/student";
 
 /**
  * The visitor's own match, on a scholarship detail page reached from `/matches`.
@@ -56,6 +58,10 @@ interface PersonalisedValue {
   match: MatchInsights;
   completion: ProfileCompletion;
   provisional: boolean;
+  /** The stored profile the evaluation was computed from. */
+  profile: StudentProfile;
+  /** The raw engine result, as produced by `matchScholarship`. */
+  result: MatchResult;
 }
 
 const PersonalisedContext = createContext<PersonalisedValue | null>(null);
@@ -114,11 +120,16 @@ function PersonalisedMatchContextProvider({
 
   const value = useMemo<PersonalisedValue>(() => {
     const completion = profileCompletion(profile);
+    // Evaluated once and shared so the ring, the breakdown and the readiness
+    // section all read the same engine result for the same profile.
+    const result = matchScholarship(profile, scholarship);
     return {
       requested,
       completion,
       provisional: isProvisional(completion),
-      match: toMatchInsights(matchScholarship(profile, scholarship)),
+      profile,
+      result,
+      match: toMatchInsights(result),
     };
   }, [profile, scholarship, requested]);
 
@@ -130,8 +141,9 @@ function PersonalisedMatchContextProvider({
 /**
  * What a score placement can currently say.
  *
- * Derived once here rather than separately in each placement, so the ring and the
- * breakdown agree on the state and adding one is a single change.
+ * Derived once here rather than separately in each placement, so the ring, the
+ * breakdown and the readiness section all agree on the state and adding one is
+ * a single change.
  */
 type MatchState =
   | { kind: "sample" }
@@ -140,7 +152,7 @@ type MatchState =
   | { kind: "empty" }
   | { kind: "ready" } & Omit<PersonalisedValue, "requested">;
 
-function useMatchState(): MatchState {
+export function useMatchState(): MatchState {
   const { isHydrated, isUnreadable } = useProfile();
   const value = useContext(PersonalisedContext);
 
@@ -162,6 +174,8 @@ function useMatchState(): MatchState {
     match: value.match,
     completion: value.completion,
     provisional: value.provisional,
+    profile: value.profile,
+    result: value.result,
   };
 }
 
@@ -203,7 +217,7 @@ export function BreakdownPlaceholder() {
 }
 
 /** Prompt for someone who asked for their own match but has no usable profile. */
-function NeedsProfile({ unreadable }: { unreadable: boolean }) {
+export function NeedsProfile({ unreadable }: { unreadable: boolean }) {
   return (
     <div className="surface-glass edge-highlight rounded-3xl p-7 text-center">
       <span className="mx-auto grid size-10 place-items-center rounded-xl border border-hairline bg-white/[0.04]">

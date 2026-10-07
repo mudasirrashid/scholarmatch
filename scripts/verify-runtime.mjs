@@ -151,7 +151,7 @@ check("detail has a canonical url", detail.html.includes('<link rel="canonical" 
 
 /* Every section the sticky nav links to must exist as a real anchor target. */
 const SECTION_IDS = [
-  "overview", "match", "eligibility", "funding",
+  "overview", "match", "eligibility", "prepare", "funding",
   "documents", "how-to-apply", "journey", "mistakes", "source",
 ];
 for (const id of SECTION_IDS) {

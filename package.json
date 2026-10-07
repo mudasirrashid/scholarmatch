@@ -11,9 +11,10 @@
     "verify:query": "tsx scripts/verify-explorer.ts",
     "verify:matching": "tsx scripts/verify-matching.ts",
     "verify:data": "tsx scripts/verify-data.ts",
+    "verify:preparation": "tsx scripts/verify-preparation.ts",
     "verify:a11y": "node scripts/verify-a11y.mjs",
     "verify:runtime": "node scripts/verify-runtime.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run verify:query && npm run verify:matching && npm run verify:data",
+    "verify": "npm run typecheck && npm run lint && npm run verify:query && npm run verify:matching && npm run verify:data && npm run verify:preparation",
     "verify:all": "npm run verify && npm run verify:a11y && npm run verify:runtime"
   },
   "dependencies": {

@@ -7,6 +7,11 @@ import { EligibilityList } from "@/components/scholarships/detail/eligibility-li
 import { MatchBreakdown } from "@/components/scholarships/detail/match-breakdown";
 import { QuickFacts } from "@/components/scholarships/detail/quick-facts";
 import {
+  ApplicationReadiness,
+  ReadinessPlaceholder,
+} from "@/components/scholarships/detail/application-readiness";
+import { ReadinessView } from "@/components/scholarships/detail/readiness-view";
+import {
   BreakdownPlaceholder,
   PersonalisedMatchBreakdown,
   PersonalisedMatchProvider,
@@ -31,6 +36,7 @@ import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/badge";
 import { activeDemoProfile } from "@/lib/demo/student-profiles";
 import { matchScholarship, toMatchInsights } from "@/lib/matching";
+import { assessReadiness } from "@/lib/preparation";
 import { allScholarships, getScholarship } from "@/lib/scholarships";
 import { formatExactDate, matchTone } from "@/lib/format";
 
@@ -94,6 +100,7 @@ const SECTIONS = [
   { id: "overview", label: "Overview" },
   { id: "match", label: "Your match" },
   { id: "eligibility", label: "Who can apply" },
+  { id: "prepare", label: "Application readiness" },
   { id: "funding", label: "Funding" },
   { id: "documents", label: "Documents" },
   { id: "how-to-apply", label: "How to apply" },
@@ -141,8 +148,13 @@ export default async function ScholarshipDetailPage({
   // Evaluated once, then reused for the ring, the breakdown and the metadata.
   // The explorer calls the same function with the same profile, which is what
   // keeps the list score and the detail score identical.
-  const match = toMatchInsights(matchScholarship(activeDemoProfile, scholarship));
+  const result = matchScholarship(activeDemoProfile, scholarship);
+  const match = toMatchInsights(result);
   const score = match.score;
+
+  // Readiness is a projection of the same engine result, so the sample context
+  // on this route and the personalised state after hydration share one source.
+  const readiness = assessReadiness(scholarship, activeDemoProfile, result);
 
   /*
     Held as a value rather than nested inline, so the personalised provider adds
@@ -361,6 +373,33 @@ export default async function ScholarshipDetailPage({
               description="Every requirement as the provider states it, with how your profile compares."
             >
               <EligibilityList criteria={scholarship.eligibility} />
+            </DetailSection>
+
+            <DetailSection
+              id="prepare"
+              title="Application readiness"
+              description="What to prepare, whether your profile shows it in hand, and when it needs doing."
+            >
+              <ApplicationReadiness
+                scholarship={scholarship}
+                fallback={
+                  /* Same per-context swap as the ring and the breakdown. For a
+                     bare visit the sample-against-activeDemoProfile readiness is
+                     the honest default, and it is what crawlers and no-JS
+                     readers see. For `?mine=1` the sample block is held back by
+                     the stylesheet until hydration renders the visitor's own
+                     assessment. */
+                  <>
+                    <div data-sample-match="">
+                      <ReadinessView assessment={readiness} />
+                    </div>
+
+                    <div data-mine-placeholder aria-hidden="true">
+                      <ReadinessPlaceholder />
+                    </div>
+                  </>
+                }
+              />
             </DetailSection>
 
             <DetailSection
