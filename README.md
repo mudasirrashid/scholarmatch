@@ -93,6 +93,22 @@ highest, and reports the specific unanswered fields holding the ranking back, so
 the percentage a student sees always corresponds to something that would sharpen
 their results.
 
+## Application readiness
+
+Each detail page ends with an "Application readiness" section. `lib/preparation`
+turns the same canonical record, the visitor's profile and the engine's own
+`MatchResult` into a preparation checklist, a readiness figure and a
+deterministic action plan. It never recomputes eligibility with different rules,
+and it never claims more than the profile evidences: an unanswered field is
+"preparation status not provided", not "missing". A strong match and a finished
+application are different things, and the section says so.
+
+On top of that sits the visitor's own preparation tracker — checkboxes recorded
+in `localStorage` (the same store pattern as bookmarks and the profile), so a
+returning visitor's marks reappear on the same device. A mark is a claim the
+visitor makes about their own preparation, so it is never folded into the
+figure, the level or the plan, and the copy around it says exactly that.
+
 ## Verification
 
 Matching is where a plausible-looking wrong answer does real damage to a student,
@@ -100,7 +116,7 @@ so the checks are mostly invariants that must hold for every profile and every
 record, rather than a handful of golden scores.
 
 ```bash
-npm run verify         # typecheck, lint, query behaviour, matching engine
+npm run verify         # typecheck, lint, query behaviour, matching engine, preparation
 npm run verify:all     # the above plus a11y and runtime, against a live server
 ```
 
@@ -108,6 +124,7 @@ npm run verify:all     # the above plus a11y and runtime, against a live server
 | --- | --- |
 | `verify:query` | URL filtering, sorting, and that filters work without JavaScript |
 | `verify:matching` | Score determinism and bounds, hard-failure capping, unknown-is-not-none, work authorisation, degree ordering, stored-profile validation, profile completion and personalisation |
+| `verify:preparation` | Readiness status honesty (never claims more than the profile evidences), allowed bands, deadline arithmetic, ordered action plan, and that checklist tracker rows stay identical to the readiness checklist across every record |
 | `verify:a11y` | Landmarks, heading order, form labels, control names, over served HTML |
 | `verify:runtime` | Routes, metadata, canonicals, sitemap, URL state |
 
@@ -120,7 +137,7 @@ npm run build && npm start -- -p 3111
 ## Current scope
 
 Built: profile builder, matching engine, personalised matches, explorer, detail
-pages, bookmarking.
+pages, application readiness with a per-record in-browser tracker, bookmarking.
 
 Not built, and deliberately out of scope so far: accounts, a database, server-side
 profile persistence, applications, payments, notifications, admin tooling.

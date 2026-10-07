@@ -179,7 +179,7 @@ const CATEGORY_KEYWORDS: ReadonlyArray<readonly [PreparationCategory, readonly s
   ["writing", ["statement", "motivation", "essay", "letter of intent", "personal statement"]],
 ] as const;
 
-function categoryFor(document: RequiredDocument): PreparationCategory {
+export function categoryFor(document: RequiredDocument): PreparationCategory {
   const haystack = `${document.id} ${document.label}`.toLowerCase();
   for (const [category, keywords] of CATEGORY_KEYWORDS) {
     if (keywords.some((keyword) => haystack.includes(keyword))) return category;

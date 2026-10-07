@@ -17,6 +17,16 @@ import { assessDeadline, assessReadiness } from "@/lib/preparation";
 import { matchScholarship } from "@/lib/matching";
 import { scholarships } from "@/lib/demo/data";
 import { profileA, profileB, profileC } from "@/lib/demo/student-profiles";
+import {
+  CHECKLIST_SCHEMA_VERSION,
+  CHECKLIST_STORAGE_KEY,
+  marksFor,
+  parseChecklist,
+  serializeChecklist,
+  toggleMark,
+  trackableCategoryLabel,
+  trackableItems,
+} from "@/lib/preparation/tracker";
 
 import type { PreparationPriority } from "@/lib/preparation";
 import type { Scholarship } from "@/types/scholarship";
@@ -274,6 +284,78 @@ section("Category mapping");
   check("statement maps to writing", category("doc:sop"), "writing");
   check("references map to recommendations", category("doc:references"), "recommendations");
   check("language certificate maps to language", category("doc:language"), "language");
+}
+
+section("Checklist tracker rows always match the readiness checklist");
+{
+  for (const record of scholarships) {
+    const assessment = assessReadiness(record, profileA, resultFor(profileA, record));
+
+    const requiredIds = new Set(
+      assessment.requirements
+        .filter((item) => item.requirement === "required")
+        .map((item) => item.id),
+    );
+    const tracked = trackableItems(record);
+    const trackedIds = new Set(tracked.map((item) => item.id));
+
+    check(
+      `${record.id}: every required requirement is trackable`,
+      trackedIds.size >= requiredIds.size &&
+        [...requiredIds].every((id) => trackedIds.has(id)) &&
+        [...trackedIds].every((id) => requiredIds.has(id)),
+      true,
+    );
+
+    for (const item of tracked) {
+      const requirement = requirementId(assessment, item.id);
+      check(`${record.id}: tracker row "${item.id}" keeps the assessment's label`, item.label, requirement.label);
+      check(`${record.id}: tracker row "${item.id}" keeps the assessment's category`, item.category, requirement.category);
+    }
+  }
+}
+
+section("Checklist storage");
+{
+  check("an absent key parses to empty records", parseChecklist(null), {
+    version: CHECKLIST_SCHEMA_VERSION,
+    records: {},
+  });
+  check("malformed JSON parses to empty records", parseChecklist("{ nope"), {
+    version: CHECKLIST_SCHEMA_VERSION,
+    records: {},
+  });
+  check("a non-object parses to empty records", parseChecklist("[]"), {
+    version: CHECKLIST_SCHEMA_VERSION,
+    records: {},
+  });
+  check("non-string and duplicate marks are filtered", parseChecklist('{"records":{"x":[1,"a","a",null,"deadline"]}}'), {
+    version: CHECKLIST_SCHEMA_VERSION,
+    records: { x: ["a", "deadline"] },
+  });
+  check("non-array records are skipped", parseChecklist('{"records":{"x":"deadline"}}'), {
+    version: CHECKLIST_SCHEMA_VERSION,
+    records: {},
+  });
+
+  const emptyRecords = parseChecklist(null);
+  const afterAdd = toggleMark(emptyRecords, GLOBAL_EXCELLENCE, "eligibility");
+  check("toggling adds a mark", afterAdd.records[GLOBAL_EXCELLENCE], ["eligibility"]);
+  check("toggling again removes the mark", toggleMark(afterAdd, GLOBAL_EXCELLENCE, "eligibility").records[GLOBAL_EXCELLENCE], []);
+
+  const secondAdd = toggleMark(afterAdd, GLOBAL_EXCELLENCE, "deadline");
+  check("marks accumulate", secondAdd.records[GLOBAL_EXCELLENCE], ["eligibility", "deadline"]);
+  check("other awards' records are preserved", toggleMark(secondAdd, "demo-other", "deadline").records[GLOBAL_EXCELLENCE], ["eligibility", "deadline"]);
+
+  check("the stored value round-trips through parse", parseChecklist(serializeChecklist(secondAdd)), secondAdd);
+  check("the key is namespaced like the other stores", CHECKLIST_STORAGE_KEY, "scholarmatch:checklist");
+
+  const emptyMarks = marksFor(parseChecklist(null), GLOBAL_EXCELLENCE);
+  check("marksFor returns an empty set for an unmatched record", emptyMarks.has("eligibility"), false);
+  check("marksFor returns the stored marks", marksFor(secondAdd, GLOBAL_EXCELLENCE).has("eligibility"), true);
+
+  const record = recordById(GLOBAL_EXCELLENCE);
+  check("a category label resolves for every trackable row", trackableItems(record).every((item) => trackableCategoryLabel(item.category).length > 0), true);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

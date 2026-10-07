@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { ReadinessView } from "@/components/scholarships/detail/readiness-view";
+import { ReadinessTracker } from "@/components/scholarships/detail/readiness-tracker";
 import { NeedsProfile, useMatchState } from "@/components/matches/personalised-match";
 import { assessReadiness } from "@/lib/preparation";
 
@@ -56,7 +57,14 @@ export function ApplicationReadiness({
     [scholarship, state],
   );
 
-  if (state.kind === "sample") return <>{fallback}</>;
+  if (state.kind === "sample") {
+    return (
+      <>
+        {fallback}
+        <ReadinessTracker scholarship={scholarship} />
+      </>
+    );
+  }
 
   if (state.kind === "loading") {
     return (
@@ -73,5 +81,10 @@ export function ApplicationReadiness({
     return <NeedsProfile unreadable={state.kind === "unreadable"} />;
   }
 
-  return <ReadinessView assessment={assessment!} />;
+  return (
+    <>
+      <ReadinessView assessment={assessment!} />
+      <ReadinessTracker scholarship={scholarship} />
+    </>
+  );
 }
