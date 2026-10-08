@@ -47,7 +47,7 @@ export function SearchField({
         }}
         placeholder="Search scholarships, universities, countries..."
         autoComplete="off"
-        className="h-12 w-full rounded-full border border-hairline bg-white/[0.04] pr-11 pl-11 text-[0.9375rem] text-mist-100 transition-[border-color,background-color,box-shadow] duration-[240ms] placeholder:text-mist-500 hover:border-hairline-strong hover:bg-white/[0.06] focus:border-azure-400/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-azure-400/12 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+        className="h-12 w-full rounded-full border border-hairline bg-tint/[0.04] pr-11 pl-11 text-[0.9375rem] text-mist-100 transition-[border-color,background-color,box-shadow] duration-[240ms] placeholder:text-mist-500 hover:border-hairline-strong hover:bg-tint/[0.06] focus:border-azure-400/50 focus:bg-tint/[0.07] focus:ring-4 focus:ring-azure-400/12 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
 
       {hasValue ? (
@@ -58,7 +58,7 @@ export function SearchField({
             onChange({ ...query, q: "" });
           }}
           aria-label="Clear search"
-          className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-mist-400 transition-colors duration-200 hover:bg-white/[0.08] hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+          className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-mist-400 transition-colors duration-200 hover:bg-tint/[0.08] hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
         >
           <X className="size-4" aria-hidden="true" />
         </button>

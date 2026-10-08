@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Brand } from "@/components/layout/brand";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/cn";
@@ -116,6 +117,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="hidden items-center gap-2.5 lg:flex">
+            <ThemeToggle />
             {/*
               Authentication does not exist yet, so "Sign In" still targets the
               conversion section. "Get Started" points at the explorer on routes
@@ -145,7 +147,7 @@ export function SiteHeader() {
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="grid size-10 place-items-center rounded-full border border-hairline bg-white/[0.04] text-mist-100 transition-colors duration-200 hover:bg-white/[0.09] lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-hairline bg-tint/[0.04] text-mist-100 transition-colors duration-200 hover:bg-tint/[0.09] lg:hidden"
           >
             {menuOpen ? (
               <X className="size-[18px]" aria-hidden="true" />
@@ -179,6 +181,10 @@ export function SiteHeader() {
             </ul>
 
             <div className="flex flex-col gap-2.5 pt-5 pb-2">
+              <div className="flex items-center justify-between">
+                <span className="label-micro text-mist-500">Appearance</span>
+                <ThemeToggle />
+              </div>
               <Button href="/applications" variant="secondary" size="md">
                 Applications
               </Button>

@@ -107,7 +107,7 @@ export function ScholarshipCard({
               {href ? (
                 <Link
                   href={href}
-                  className="transition-colors duration-200 after:absolute after:inset-0 after:content-[''] hover:text-white focus-visible:outline-none"
+                  className="transition-colors duration-200 after:absolute after:inset-0 after:content-[''] hover:text-emphasis focus-visible:outline-none"
                 >
                   {title}
                 </Link>
@@ -141,7 +141,7 @@ export function ScholarshipCard({
         {/* Match strength bar */}
         <div
           aria-hidden="true"
-          className="mt-5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]"
+          className="mt-5 h-1 w-full overflow-hidden rounded-full bg-tint/[0.07]"
         >
           <div
             className={cn(
@@ -230,7 +230,7 @@ export function ScholarshipCard({
 
             <div className="flex items-center justify-between gap-3">
               {href ? (
-                <span className="pointer-events-none inline-flex min-w-0 items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 group-hover:text-white">
+                <span className="pointer-events-none inline-flex min-w-0 items-center gap-1 text-sm font-medium text-mist-100 transition-colors duration-200 group-hover:text-emphasis">
                   <span className="truncate">View Scholarship</span>
                   <ArrowUpRight
                     className="size-3.5 shrink-0 transition-transform duration-[320ms] ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

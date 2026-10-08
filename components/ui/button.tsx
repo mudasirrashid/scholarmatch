@@ -22,17 +22,17 @@ const BASE =
 const VARIANTS: Record<ButtonVariant, string> = {
   // Highest-contrast resting state; used for primary conversion actions.
   primary:
-    "bg-mist-50 text-ink-950 shadow-[0_1px_0_#fff_inset,0_12px_28px_-14px_rgba(56,189,248,0.55)] " +
-    "hover:bg-white hover:shadow-[0_1px_0_#fff_inset,0_18px_40px_-14px_rgba(56,189,248,0.75)]",
+    "bg-solid text-solid-ink shadow-[0_1px_0_#fff_inset,0_12px_28px_-14px_rgba(56,189,248,0.55)] " +
+    "hover:bg-solid-hover hover:shadow-[0_1px_0_#fff_inset,0_18px_40px_-14px_rgba(56,189,248,0.75)]",
   // Glassy secondary for paired actions.
   secondary:
-    "surface-glass text-mist-100 hover:border-hairline-strong hover:bg-white/[0.07]",
+    "surface-glass text-mist-100 hover:border-hairline-strong hover:bg-tint/[0.07]",
   // Saturated gradient for deliberate emphasis.
   accent:
     "bg-gradient-to-b from-azure-500 to-iris-600 text-white " +
     "shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_14px_34px_-14px_rgba(79,70,229,0.9)] " +
     "hover:from-azure-400 hover:to-iris-500",
-  ghost: "text-mist-300 hover:bg-white/[0.06] hover:text-mist-50",
+  ghost: "text-mist-300 hover:bg-tint/[0.06] hover:text-mist-50",
 };
 
 const SIZES: Record<ButtonSize, string> = {

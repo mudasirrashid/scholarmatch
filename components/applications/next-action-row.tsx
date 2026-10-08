@@ -21,7 +21,7 @@ export function NextActionRow({ action }: { action: NextAction }) {
     "group inline-flex items-center gap-2 text-[0.9375rem] font-medium text-azure-200 transition-colors duration-200 hover:text-azure-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300";
 
   return (
-    <div className="rounded-xl border border-hairline bg-white/[0.03] p-3.5">
+    <div className="rounded-xl border border-hairline bg-tint/[0.03] p-3.5">
       {action.href ? (
         external ? (
           <a

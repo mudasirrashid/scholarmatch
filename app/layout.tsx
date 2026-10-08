@@ -101,18 +101,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           JavaScript nothing is hidden, which keeps the page readable when
           scripting is unavailable or blocked.
 
-          The same script also records whether this request asked for the
-          visitor's own match (`?mine=1`). It has to happen here, in the head and
-          before the body is parsed, because the detail route is prerendered: its
-          markup carries the sample figure, and the only moment the browser can be
+          The same script applies the stored theme before anything could flash
+          in the wrong one. Dark is the authored baseline, so an absent or
+          invalid saved value resolves to dark and the server never needs to
+          know which theme a visitor last chose.
+
+          It also records whether this request asked for the visitor's own
+          match (`?mine=1`). It has to happen here, in the head and before the
+          body is parsed, because the detail route is prerendered: its markup
+          carries the sample figure, and the only moment the browser can be
           told to hold that figure back is before it would first be painted. A
-          flag set later — from a component, an effect, anywhere after parsing —
-          arrives one paint too late, and another person's score has already been
-          on screen.
+          flag set later — from a component, an effect, anywhere after parsing
+          — arrives one paint too late, and another person's score has already
+          been on screen.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('js');if(new URLSearchParams(location.search).get('mine')==='1'){document.documentElement.setAttribute('data-match-context','mine')}`,
+            __html: `document.documentElement.classList.add('js');try{var t=localStorage.getItem('scholarmatch:theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}if(new URLSearchParams(location.search).get('mine')==='1'){document.documentElement.setAttribute('data-match-context','mine')}`,
           }}
         />
       </head>

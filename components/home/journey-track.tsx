@@ -33,7 +33,7 @@ export function Journey({ stages }: { stages: readonly JourneyStage[] }) {
       {/* Vertical rail (small screens) */}
       <div
         aria-hidden="true"
-        className="absolute top-7 bottom-7 left-[1.4375rem] w-px bg-white/[0.07] lg:hidden"
+        className="absolute top-7 bottom-7 left-[1.4375rem] w-px bg-tint/[0.07] lg:hidden"
       >
         <div
           data-meter-y={inView ? "filled" : "empty"}
@@ -44,7 +44,7 @@ export function Journey({ stages }: { stages: readonly JourneyStage[] }) {
       {/* Horizontal rail (large screens) */}
       <div
         aria-hidden="true"
-        className="absolute top-7 right-16 left-16 hidden h-px bg-white/[0.07] lg:block"
+        className="absolute top-7 right-16 left-16 hidden h-px bg-tint/[0.07] lg:block"
       >
         <div
           data-meter={inView ? "filled" : "empty"}

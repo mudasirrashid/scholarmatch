@@ -149,7 +149,7 @@ export function HeroVisual() {
               {/* Sweeping highlight, the one piece of continuous motion. */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 animate-sweep bg-gradient-to-r from-transparent via-white/[0.07] to-transparent"
+                className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 animate-sweep bg-gradient-to-r from-transparent via-tint/[0.07] to-transparent"
               />
             </article>
           </div>

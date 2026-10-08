@@ -72,7 +72,7 @@ export function FeatureShowcase({ features }: { features: readonly FeatureBlock[
 
                   <div className="relative flex gap-5">
                     <div className="flex flex-col items-center">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-full border border-hairline bg-white/[0.04] text-mist-200 transition-colors duration-300 group-hover:border-azure-400/30 group-hover:text-azure-300">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-full border border-hairline bg-tint/[0.04] text-mist-200 transition-colors duration-300 group-hover:border-azure-400/30 group-hover:text-azure-300">
                         <Icon className="size-[1.125rem]" aria-hidden="true" />
                       </span>
                       <span className="label-micro mt-3 text-mist-600">

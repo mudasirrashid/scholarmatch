@@ -128,7 +128,7 @@ function SampleProfileNote() {
       Scored against the sample student profile, not your own answers.{" "}
       <Link
         href="/profile"
-        className="text-mist-100 underline decoration-white/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300"
+        className="text-mist-100 underline decoration-tint/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300"
       >
         Score it against my profile
       </Link>
@@ -209,7 +209,7 @@ export default async function ScholarshipDetailPage({
                     href={scholarship.officialSource.verifiedUrl}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="inline-flex h-11 items-center gap-2 rounded-full border border-hairline bg-white/[0.04] px-5 text-[0.9375rem] text-mist-100 transition-colors duration-200 hover:border-hairline-strong hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-hairline bg-tint/[0.04] px-5 text-[0.9375rem] text-mist-100 transition-colors duration-200 hover:border-hairline-strong hover:bg-tint/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
                   >
                     Official page
                     <ExternalLink className="size-4" aria-hidden="true" />
@@ -221,7 +221,7 @@ export default async function ScholarshipDetailPage({
                     href={scholarship.officialSource.applicationUrl}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="inline-flex h-11 items-center gap-2 rounded-full bg-white/[0.09] px-5 text-[0.9375rem] font-medium text-mist-50 transition-colors duration-200 hover:bg-white/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                    className="inline-flex h-11 items-center gap-2 rounded-full bg-tint/[0.09] px-5 text-[0.9375rem] font-medium text-mist-50 transition-colors duration-200 hover:bg-tint/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
                   >
                     Apply now
                     <ExternalLink className="size-4" aria-hidden="true" />

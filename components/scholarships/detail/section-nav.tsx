@@ -66,8 +66,8 @@ export function DetailSectionNav({ sections }: { sections: readonly { id: string
                   "transition-[background-color,color] duration-[240ms]",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
                   isActive
-                    ? "bg-white/[0.08] text-mist-50"
-                    : "text-mist-500 hover:bg-white/[0.05] hover:text-mist-200",
+                    ? "bg-tint/[0.08] text-mist-50"
+                    : "text-mist-500 hover:bg-tint/[0.05] hover:text-mist-200",
                 ].join(" ")}
               >
                 {section.label}

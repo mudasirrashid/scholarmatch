@@ -41,7 +41,7 @@ export function NoResultsState({
       />
 
       <div className="relative">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-white/[0.04]">
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-tint/[0.04]">
           <SearchX className="size-6 text-mist-400" aria-hidden="true" />
         </span>
 
@@ -90,7 +90,7 @@ export function NoSavedState({
       />
 
       <div className="relative">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-white/[0.04]">
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-tint/[0.04]">
           <Bookmark className="size-6 text-mist-400" aria-hidden="true" />
         </span>
 
@@ -112,7 +112,7 @@ export function NoSavedState({
           onClick={onReset}
           className={cn(
             "mt-5 block w-full text-sm text-mist-500",
-            "underline decoration-white/15 underline-offset-4",
+            "underline decoration-tint/15 underline-offset-4",
             "transition-colors duration-200 hover:text-mist-300",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
           )}

@@ -211,8 +211,8 @@ export function ApplicationsView() {
                     className={cn(
                       "inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[0.8125rem] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
                       active
-                        ? "border-hairline-strong bg-white/[0.09] text-mist-50"
-                        : "border-hairline bg-white/[0.03] text-mist-400 hover:border-hairline-strong hover:bg-white/[0.06] hover:text-mist-100",
+                        ? "border-hairline-strong bg-tint/[0.09] text-mist-50"
+                        : "border-hairline bg-tint/[0.03] text-mist-400 hover:border-hairline-strong hover:bg-tint/[0.06] hover:text-mist-100",
                     )}
                   >
                     {label}
@@ -250,7 +250,7 @@ export function ApplicationsView() {
                 ))}
               </ul>
             ) : (
-              <div className="mt-8 rounded-3xl border border-hairline bg-white/[0.02] p-10 text-center">
+              <div className="mt-8 rounded-3xl border border-hairline bg-tint/[0.02] p-10 text-center">
                 <p className="text-sm text-mist-400">No applications in this group.</p>
               </div>
             )}
@@ -344,7 +344,7 @@ function TrackedCard({
           onBlur={(event) => onNote(event.target.value.trim())}
           placeholder="Anything to remember about this application"
           autoComplete="off"
-          className="mt-1.5 w-full rounded-xl border border-hairline bg-white/[0.03] px-3.5 py-2.5 text-sm text-mist-100 placeholder:text-mist-500 transition-colors duration-200 hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+          className="mt-1.5 w-full rounded-xl border border-hairline bg-tint/[0.03] px-3.5 py-2.5 text-sm text-mist-100 placeholder:text-mist-500 transition-colors duration-200 hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
         />
       </div>
 
@@ -391,7 +391,7 @@ function EmptyApplications() {
       />
 
       <div className="relative">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-white/[0.04]">
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-tint/[0.04]">
           <Inbox className="size-6 text-mist-400" aria-hidden="true" />
         </span>
 

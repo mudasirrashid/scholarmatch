@@ -374,7 +374,7 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
         >
           {/* Grab handle doubles as the drag affordance cue. */}
           <div className="flex shrink-0 justify-center pt-3">
-            <span className="h-1 w-10 rounded-full bg-white/20" aria-hidden="true" />
+            <span className="h-1 w-10 rounded-full bg-tint/20" aria-hidden="true" />
           </div>
 
           <div className="flex shrink-0 items-center justify-between gap-4 px-5 py-4">
@@ -387,7 +387,7 @@ export function FilterPanel({ query, onChange, fields, countries }: FilterPanelP
               ref={closeRef}
               onClick={close}
               aria-label="Close filters"
-              className="grid size-8 place-items-center rounded-full text-mist-400 transition-colors duration-200 hover:bg-white/[0.08] hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+              className="grid size-8 place-items-center rounded-full text-mist-400 transition-colors duration-200 hover:bg-tint/[0.08] hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
             >
               <X className="size-4" aria-hidden="true" />
             </button>
