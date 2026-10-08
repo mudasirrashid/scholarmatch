@@ -148,7 +148,7 @@ function ResultRow({ entry }: { entry: RankedScholarship }) {
   const preview = toPreview(scholarship, toMatchInsights(match));
 
   return (
-    <li className="rounded-xl border border-hairline-soft bg-tint/[0.03] p-4">
+    <li className="rounded-xl border border-hairline-soft bg-white/[0.03] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <Link

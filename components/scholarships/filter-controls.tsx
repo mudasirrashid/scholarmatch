@@ -28,8 +28,8 @@ export function FilterCheckbox({
     <label
       className={cn(
         "group/check flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2",
-        "transition-colors duration-200 hover:bg-tint/[0.05]",
-        "focus-within:bg-tint/[0.05]",
+        "transition-colors duration-200 hover:bg-white/[0.05]",
+        "focus-within:bg-white/[0.05]",
       )}
     >
       <span className="relative grid size-[1.125rem] shrink-0 place-items-center">
@@ -38,7 +38,7 @@ export function FilterCheckbox({
           name={name}
           checked={checked}
           onChange={onChange}
-          className="peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[0.3125rem] border border-hairline-strong bg-tint/[0.04] transition-[background-color,border-color] duration-200 checked:border-azure-400 checked:bg-azure-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+          className="peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[0.3125rem] border border-hairline-strong bg-white/[0.04] transition-[background-color,border-color] duration-200 checked:border-azure-400 checked:bg-azure-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
         />
         <svg
           className="pointer-events-none relative size-3 scale-75 text-ink-950 opacity-0 transition-[transform,opacity] duration-200 peer-checked:scale-100 peer-checked:opacity-100"

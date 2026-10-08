@@ -129,7 +129,7 @@ export function ApplicationTrackingCard({ scholarship }: { scholarship: Scholars
             placeholder="Anything to remember about this application"
             autoComplete="off"
             className={cn(
-              "mt-1.5 w-full rounded-xl border border-hairline bg-tint/[0.03] px-3.5 py-2.5",
+              "mt-1.5 w-full rounded-xl border border-hairline bg-white/[0.03] px-3.5 py-2.5",
               "text-sm text-mist-100 placeholder:text-mist-500 transition-colors duration-200",
               "hover:border-hairline-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
             )}
@@ -140,7 +140,7 @@ export function ApplicationTrackingCard({ scholarship }: { scholarship: Scholars
           <span className="text-xs text-mist-500">
             <Link
               href="/applications"
-              className="text-mist-300 underline decoration-tint/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300"
+              className="text-mist-300 underline decoration-white/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azure-300"
             >
               Manage in your tracker
             </Link>

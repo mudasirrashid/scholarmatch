@@ -130,8 +130,8 @@ function ProfileBuilderInner() {
                           isCurrent
                             ? "bg-mist-50 text-ink-950"
                             : isVisited
-                              ? "bg-tint/[0.07] text-mist-200 hover:bg-tint/[0.11]"
-                              : "text-mist-500 hover:bg-tint/[0.05] hover:text-mist-300",
+                              ? "bg-white/[0.07] text-mist-200 hover:bg-white/[0.11]"
+                              : "text-mist-500 hover:bg-white/[0.05] hover:text-mist-300",
                         )}
                       >
                         <span className="font-mono text-[0.6875rem] opacity-60">
@@ -308,7 +308,7 @@ function ReviewStep() {
         not see it listed there at all if their top match happened not to care.
       */}
       {completion.gaps.length > 0 ? (
-        <div className="mt-7 rounded-xl border border-hairline-soft bg-tint/[0.03] p-4">
+        <div className="mt-7 rounded-xl border border-hairline-soft bg-white/[0.03] p-4">
           <h3 className="text-sm font-medium text-mist-100">
             What would sharpen these scores
           </h3>
@@ -353,14 +353,14 @@ function ReviewStep() {
 function CompletionMeter({ completion, isHydrated }: { completion: ProfileCompletion; isHydrated: boolean }) {
   if (!isHydrated) {
     return (
-      <div className="mt-6 h-[5.125rem] rounded-xl border border-hairline-soft bg-tint/[0.03]" aria-busy="true">
+      <div className="mt-6 h-[5.125rem] rounded-xl border border-hairline-soft bg-white/[0.03]" aria-busy="true">
         <span className="sr-only">Reading your saved profile.</span>
       </div>
     );
   }
 
   return (
-    <div className="mt-6 rounded-xl border border-hairline-soft bg-tint/[0.03] p-4">
+    <div className="mt-6 rounded-xl border border-hairline-soft bg-white/[0.03] p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm text-mist-300">
           <span className="font-mono text-mist-50">{completion.percent}%</span> of what
@@ -375,7 +375,7 @@ function CompletionMeter({ completion, isHydrated }: { completion: ProfileComple
       <div
         role="img"
         aria-label={`${completion.percent} percent of the fields your score depends on are answered.`}
-        className="mt-3 h-1.5 overflow-hidden rounded-full bg-tint/[0.06]"
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]"
       >
         <div
           className="h-full rounded-full bg-azure-400/70"
@@ -500,7 +500,7 @@ function DemoProfiles({
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
                   isActive
                     ? "border-azure-400/50 bg-azure-400/10"
-                    : "border-hairline bg-tint/[0.03] hover:border-hairline-strong hover:bg-tint/[0.06]",
+                    : "border-hairline bg-white/[0.03] hover:border-hairline-strong hover:bg-white/[0.06]",
                 )}
               >
                 <span className="flex items-baseline gap-2">

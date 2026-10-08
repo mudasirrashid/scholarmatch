@@ -171,7 +171,7 @@ function PreparationPlan({ assessment }: { assessment: ReadinessAssessment }) {
           <li key={step.id} className="surface-glass flex gap-4 rounded-2xl p-5">
             <span
               aria-hidden="true"
-              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-tint/[0.06] text-xs font-medium text-mist-300"
+              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-xs font-medium text-mist-300"
             >
               {String(index + 1).padStart(2, "0")}
             </span>

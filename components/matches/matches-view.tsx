@@ -359,7 +359,7 @@ function ProfileProgress() {
         </div>
 
         <div
-          className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-tint/[0.07]"
+          className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]"
           role="img"
           aria-label={`Profile ${completion.percent}% complete`}
         >
@@ -389,7 +389,7 @@ function ProfileProgress() {
               {completion.gaps.slice(0, 6).map((gap) => (
                 <li
                   key={gap.id}
-                  className="rounded-xl border border-hairline-soft bg-tint/[0.03] p-3.5"
+                  className="rounded-xl border border-hairline-soft bg-white/[0.03] p-3.5"
                 >
                   <p className="text-sm font-medium text-mist-100">{gap.label}</p>
                   <p className="mt-1 text-[0.8125rem] leading-relaxed text-pretty text-mist-500">
@@ -448,7 +448,7 @@ function EmptyProfileState() {
       />
 
       <div className="relative">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-tint/[0.04]">
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-white/[0.04]">
           <UserRound className="size-6 text-mist-400" aria-hidden="true" />
         </span>
 
@@ -490,7 +490,7 @@ function UnreadableProfileState() {
       />
 
       <div className="relative" role="alert">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-tint/[0.04]">
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-hairline bg-white/[0.04]">
           <Compass className="size-6 text-amber-300" aria-hidden="true" />
         </span>
 

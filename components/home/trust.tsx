@@ -87,7 +87,7 @@ export function Trust() {
 
             return (
               <div key={principle.id} className="max-w-sm">
-                <span className="inline-grid size-10 place-items-center rounded-full border border-hairline bg-tint/[0.04] text-mist-300">
+                <span className="inline-grid size-10 place-items-center rounded-full border border-hairline bg-white/[0.04] text-mist-300">
                   <Icon className="size-4" aria-hidden="true" />
                 </span>
 

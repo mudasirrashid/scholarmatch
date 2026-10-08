@@ -220,7 +220,7 @@ export function BreakdownPlaceholder() {
 export function NeedsProfile({ unreadable }: { unreadable: boolean }) {
   return (
     <div className="surface-glass edge-highlight rounded-3xl p-7 text-center">
-      <span className="mx-auto grid size-10 place-items-center rounded-xl border border-hairline bg-tint/[0.04]">
+      <span className="mx-auto grid size-10 place-items-center rounded-xl border border-hairline bg-white/[0.04]">
         {unreadable ? (
           <AlertTriangle className="size-5 text-amber-300" aria-hidden="true" />
         ) : (

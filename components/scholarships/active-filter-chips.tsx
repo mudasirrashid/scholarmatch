@@ -28,7 +28,7 @@ function Chip({
       <span className="text-azure-200/70">{FILTER_GROUP_TITLES[group]}</span>
       <span className="text-azure-50">{label}</span>
       <span
-        className="grid size-4 place-items-center rounded-full text-azure-200 transition-colors duration-200 group-hover/chip:bg-azure-400/25 group-hover/chip:text-emphasis"
+        className="grid size-4 place-items-center rounded-full text-azure-200 transition-colors duration-200 group-hover/chip:bg-azure-400/25 group-hover/chip:text-white"
         aria-hidden="true"
       >
         <X className="size-3" />
@@ -116,7 +116,7 @@ export function ActiveFilterChips({
             sort: query.sort,
           })
         }
-        className="ml-1 text-[0.8125rem] text-mist-400 underline decoration-tint/20 underline-offset-4 transition-colors duration-200 hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+        className="ml-1 text-[0.8125rem] text-mist-400 underline decoration-white/20 underline-offset-4 transition-colors duration-200 hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
       >
         Clear all
       </button>

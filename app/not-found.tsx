@@ -63,7 +63,7 @@ export default function NotFound() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-mist-300 underline decoration-tint/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                    className="text-sm text-mist-300 underline decoration-white/15 underline-offset-4 transition-colors duration-200 hover:text-mist-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
                   >
                     {item.label}
                   </Link>
