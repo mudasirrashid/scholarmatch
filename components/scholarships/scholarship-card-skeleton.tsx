@@ -28,7 +28,7 @@ export function ScholarshipCardSkeleton() {
         </div>
       </div>
 
-      <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
+      <div className="mt-5 h-1 w-full overflow-hidden rounded-full bg-tint/[0.07]">
         <div className="shimmer h-full w-3/5 rounded-full" />
       </div>
 

@@ -31,7 +31,7 @@ export function SortControl({
         id="scholarmatch-sort"
         value={query.sort}
         onChange={(event) => onChange({ ...query, sort: event.target.value as SortKey })}
-        className="h-9 cursor-pointer appearance-none rounded-full border border-hairline bg-white/[0.04] pr-9 pl-3.5 text-[0.8125rem] text-mist-200 transition-[border-color,background-color,opacity] duration-[240ms] hover:border-hairline-strong hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300 [&>option]:bg-ink-900 [&>option]:text-mist-100"
+        className="h-9 cursor-pointer appearance-none rounded-full border border-hairline bg-tint/[0.04] pr-9 pl-3.5 text-[0.8125rem] text-mist-200 transition-[border-color,background-color,opacity] duration-[240ms] hover:border-hairline-strong hover:bg-tint/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300 [&>option]:bg-ink-900 [&>option]:text-mist-100"
         style={{ opacity: pending ? 0.6 : 1 }}
       >
         {SORT_OPTIONS.map((option) => (

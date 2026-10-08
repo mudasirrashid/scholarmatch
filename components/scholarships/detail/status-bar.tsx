@@ -29,7 +29,7 @@ export function StatusBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={`${label} match`}
-      className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]"
+      className="h-1.5 w-full overflow-hidden rounded-full bg-tint/[0.07]"
     >
       <div
         style={{ width: `${clamped}%` }}

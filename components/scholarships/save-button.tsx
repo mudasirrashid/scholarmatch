@@ -43,7 +43,7 @@ export function SaveButton({
         variant === "icon" ? "size-9" : "h-11 px-5 text-sm font-medium",
         saved
           ? "border-mint-400/40 bg-mint-400/12 text-mint-200"
-          : "border-hairline bg-white/[0.04] text-mist-400 hover:border-hairline-strong hover:bg-white/[0.08] hover:text-mist-100",
+          : "border-hairline bg-tint/[0.04] text-mist-400 hover:border-hairline-strong hover:bg-tint/[0.08] hover:text-mist-100",
         className,
       )}
     >

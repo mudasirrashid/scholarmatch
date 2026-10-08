@@ -164,7 +164,7 @@ export function ReadinessTracker({ scholarship }: { scholarship: Scholarship }) 
                 <label
                   className={cn(
                     "flex w-full cursor-pointer items-center gap-3 rounded-xl px-1 py-1",
-                    "transition-colors duration-200 hover:bg-white/[0.04]",
+                    "transition-colors duration-200 hover:bg-tint/[0.04]",
                     "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-azure-300",
                     "group/check",
                   )}
@@ -173,7 +173,7 @@ export function ReadinessTracker({ scholarship }: { scholarship: Scholarship }) 
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(item.id)}
-                    className="peer size-4 shrink-0 appearance-none rounded-[0.25rem] border border-hairline-strong bg-white/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                    className="peer size-4 shrink-0 appearance-none rounded-[0.25rem] border border-hairline-strong bg-tint/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
                     aria-describedby={checked ? "tracker-marked-count" : undefined}
                   />
                   <span className="min-w-0 flex-1">

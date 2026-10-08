@@ -16,7 +16,7 @@ export function Hero() {
           {/* --- Copy --------------------------------------------------- */}
           <div className="relative z-10 max-w-2xl">
             <Reveal>
-              <p className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-white/[0.04] py-1.5 pr-4 pl-1.5 text-xs text-mist-300 backdrop-blur-sm">
+              <p className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-tint/[0.04] py-1.5 pr-4 pl-1.5 text-xs text-mist-300 backdrop-blur-sm">
                 <span className="relative grid size-5 place-items-center">
                   <span className="absolute inset-0 rounded-full bg-azure-400/25 animate-pulse-ring" />
                   <span className="relative size-1.5 rounded-full bg-azure-300" />

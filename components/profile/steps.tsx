@@ -311,7 +311,7 @@ export function EligibilityStep() {
 /** Explains that an unanswered language requirement is a review item, not a rejection. */
 function LanguageNote({ hasAnyTest }: { hasAnyTest: boolean }) {
   return (
-    <p className="flex gap-3 rounded-xl border border-hairline-soft bg-white/[0.03] p-4 text-sm leading-relaxed text-mist-400">
+    <p className="flex gap-3 rounded-xl border border-hairline-soft bg-tint/[0.03] p-4 text-sm leading-relaxed text-mist-400">
       <span className="mt-2 size-1.5 shrink-0 rounded-full bg-azure-300" aria-hidden="true" />
       <span>
         {hasAnyTest

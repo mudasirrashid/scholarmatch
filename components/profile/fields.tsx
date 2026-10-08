@@ -104,9 +104,9 @@ export function Field({
 
 /** Shared classes for text-like inputs, so fields stay visually consistent. */
 export const INPUT_CLASSES =
-  "w-full rounded-xl border border-hairline bg-white/[0.04] px-4 py-3 text-[0.9375rem] " +
+  "w-full rounded-xl border border-hairline bg-tint/[0.04] px-4 py-3 text-[0.9375rem] " +
   "text-mist-100 placeholder:text-mist-600 transition-colors duration-200 " +
-  "hover:border-hairline-strong focus:border-azure-400/70 focus:bg-white/[0.06] " +
+  "hover:border-hairline-strong focus:border-azure-400/70 focus:bg-tint/[0.06] " +
   "focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300";
 
 export function TextInput({
@@ -370,7 +370,7 @@ export function RadioGroup<T extends string>({
                 "transition-colors duration-200",
                 checked
                   ? "border-azure-400/50 bg-azure-400/10"
-                  : "border-hairline bg-white/[0.03] hover:border-hairline-strong hover:bg-white/[0.06]",
+                  : "border-hairline bg-tint/[0.03] hover:border-hairline-strong hover:bg-tint/[0.06]",
                 "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-azure-300",
               )}
             >
@@ -381,7 +381,7 @@ export function RadioGroup<T extends string>({
                 value={option.value}
                 checked={checked}
                 onChange={() => onChange(option.value)}
-                className="mt-0.5 size-4 shrink-0 appearance-none rounded-full border border-hairline-strong bg-white/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400"
+                className="mt-0.5 size-4 shrink-0 appearance-none rounded-full border border-hairline-strong bg-tint/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400"
               />
 
               <span className="min-w-0 flex-1">
@@ -448,7 +448,7 @@ export function CheckboxGroup<T extends string>({
                 "transition-colors duration-200",
                 checked
                   ? "border-azure-400/50 bg-azure-400/10"
-                  : "border-hairline bg-white/[0.03] hover:border-hairline-strong hover:bg-white/[0.06]",
+                  : "border-hairline bg-tint/[0.03] hover:border-hairline-strong hover:bg-tint/[0.06]",
                 "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-azure-300",
               )}
             >
@@ -457,7 +457,7 @@ export function CheckboxGroup<T extends string>({
                 type="checkbox"
                 checked={checked}
                 onChange={() => onToggle(option.value)}
-                className="size-4 shrink-0 appearance-none rounded-[0.25rem] border border-hairline-strong bg-white/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400"
+                className="size-4 shrink-0 appearance-none rounded-[0.25rem] border border-hairline-strong bg-tint/[0.04] transition-colors duration-200 checked:border-azure-400 checked:bg-azure-400"
               />
               <span
                 className={cn(
