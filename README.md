@@ -65,6 +65,9 @@ lib/matching/        The engine. Pure and deterministic.
                        nothing.
 lib/profile/         Stored-profile validation and completion. Completion
                      counts only the fields the engine reads.
+lib/applications/    Application-tracking math: tolerant storage parsing,
+                     deadline readings, the next-action engine, preparation
+                     progress and attention ordering. Pure and deterministic.
 lib/demo/             Twelve illustrative scholarship records and six demo
                       profiles. The data is invented and labelled as such
                       everywhere it surfaces.
@@ -109,6 +112,34 @@ returning visitor's marks reappear on the same device. A mark is a claim the
 visitor makes about their own preparation, so it is never folded into the
 figure, the level or the plan, and the copy around it says exactly that.
 
+## Application tracking
+
+From a scholarship's detail page a visitor can start tracking an application,
+then watch it move through nine statuses — interested, preparing, ready to
+apply, applied, under review, interview, accepted, rejected, withdrawn. Each
+detail page and the `/applications` dashboard then derive, from the record and
+the status alone:
+
+- a **deadline reading** (`lib/applications/deadline.ts`) — upcoming, due soon,
+  today, overdue before submission, closed after it, or the provider's own
+  wording for no single date. It reuses the shared reference date and format
+  helpers, so a label is always a real date, never a fabricated countdown;
+- a **next step** (`lib/applications/next-action.ts`) — a deterministic function
+  of status, deadline and preparation marks. An official-application step links
+  out only when a verified submission URL exists; otherwise it points back at
+  the detail page;
+- a **preparation progress figure** — the share of the Phase 06 tracker rows
+  marked in this browser, never a readiness score;
+- an **attention rank** (`lib/applications/priority.ts`) that leads the
+  dashboard with urgent work and keeps awaiting-decision rows after it.
+
+Tracking never feeds back into matching or readiness: a status change cannot
+move a match score, and `lib/applications` is a separate store
+(`scholarmatch:applications`) beside bookmarks, the profile and the checklist.
+The `/applications` route is a client island for the same reason `/matches` is,
+so statuses and notes never ship in the server HTML, and `verify:a11y` asserts
+exactly that.
+
 ## Verification
 
 Matching is where a plausible-looking wrong answer does real damage to a student,
@@ -116,7 +147,7 @@ so the checks are mostly invariants that must hold for every profile and every
 record, rather than a handful of golden scores.
 
 ```bash
-npm run verify         # typecheck, lint, query behaviour, matching engine, preparation
+npm run verify         # typecheck, lint, query behaviour, matching engine, preparation, application tracking
 npm run verify:all     # the above plus a11y and runtime, against a live server
 ```
 
@@ -125,6 +156,7 @@ npm run verify:all     # the above plus a11y and runtime, against a live server
 | `verify:query` | URL filtering, sorting, and that filters work without JavaScript |
 | `verify:matching` | Score determinism and bounds, hard-failure capping, unknown-is-not-none, work authorisation, degree ordering, stored-profile validation, profile completion and personalisation |
 | `verify:preparation` | Readiness status honesty (never claims more than the profile evidences), allowed bands, deadline arithmetic, ordered action plan, and that checklist tracker rows stay identical to the readiness checklist across every record |
+| `verify:applications` | Tolerant storage parsing, idempotent tracking, deadline states and labels, next-action determinism with and without a verified submission URL, progress derivation, attention ordering |
 | `verify:a11y` | Landmarks, heading order, form labels, control names, over served HTML |
 | `verify:runtime` | Routes, metadata, canonicals, sitemap, URL state |
 
@@ -137,10 +169,12 @@ npm run build && npm start -- -p 3111
 ## Current scope
 
 Built: profile builder, matching engine, personalised matches, explorer, detail
-pages, application readiness with a per-record in-browser tracker, bookmarking.
+pages, application readiness with a per-record in-browser tracker, application
+tracking with deadlines and next steps, bookmarking.
 
-Not built, and deliberately out of scope so far: accounts, a database, server-side
-profile persistence, applications, payments, notifications, admin tooling.
+Not built, and deliberately out of scope so far: accounts, a database,
+server-side profile persistence, submitting an application on a student's
+behalf, payments, notifications, admin tooling.
 
 **Profiles live in `localStorage`.** Explorer and detail pages therefore score
 against a demo profile rather than the visitor's own — `localStorage` is

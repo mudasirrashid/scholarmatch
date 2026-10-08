@@ -310,5 +310,62 @@ check(
   true,
 );
 
+/*
+ * The application-tracking route is a client island for the same reason
+ * /matches is: tracked records live in localStorage. What the server can
+ * promise is narrow, and the rest is proven by the a11y audit with a real
+ * browser: it resolves, is in the sitemap, carries complete metadata and an
+ * honest storage disclosure, and leaks none of the visitor's records into the
+ * response.
+ */
+console.log("\n--- applications route ---");
+const applications = await get("/applications");
+check("applications returns 200", applications.status, 200);
+check(
+  "applications has a canonical url",
+  applications.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/applications"'),
+  true,
+);
+check(
+  "applications has a meta description",
+  /<meta name="description" content="[^"]{40,}"/.test(applications.html),
+  true,
+);
+check(
+  "applications discloses that storage is browser-local",
+  /this browser only/i.test(applications.html),
+  true,
+);
+check(
+  "applications does not leak a tracked record id into server HTML",
+  /\/scholarships\/demo-/.test(applications.html),
+  false,
+);
+check(
+  "applications serves no tracking controls before hydration",
+  /<select/i.test(applications.html),
+  false,
+);
+
+console.log("\n--- sitemap ---");
+const sitemapAgain = await get("/sitemap.xml");
+check(
+  "sitemap lists the applications route",
+  sitemapAgain.html.includes("<loc>https://www.scholarmatch.me/applications</loc>"),
+  true,
+);
+
+/* Every page carries the applications entry point in the header. */
+check(
+  "header links to the applications dashboard",
+  home.html.includes('href="/applications"'),
+  true,
+);
+check(
+  "detail page header links to the applications dashboard",
+  detail.html.includes('href="/applications"'),
+  true,
+);
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

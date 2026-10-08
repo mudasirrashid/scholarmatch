@@ -94,7 +94,7 @@ function write(records: ChecklistRecords): void {
   notify();
 }
 
-function useChecklist(): { records: ChecklistRecords; isHydrated: boolean } {
+export function useChecklist(): { records: ChecklistRecords; isHydrated: boolean } {
   const records = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return { records, isHydrated: records !== SERVER_SNAPSHOT };
 }

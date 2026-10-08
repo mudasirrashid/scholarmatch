@@ -10,6 +10,7 @@ import {
   ApplicationReadiness,
   ReadinessPlaceholder,
 } from "@/components/scholarships/detail/application-readiness";
+import { ApplicationTrackingCard } from "@/components/scholarships/detail/application-tracking-card";
 import { ReadinessView } from "@/components/scholarships/detail/readiness-view";
 import {
   BreakdownPlaceholder,
@@ -400,6 +401,8 @@ export default async function ScholarshipDetailPage({
                   </>
                 }
               />
+
+              <ApplicationTrackingCard scholarship={scholarship} />
             </DetailSection>
 
             <DetailSection

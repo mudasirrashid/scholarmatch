@@ -134,6 +134,7 @@ await audit("detail", "/scholarships/demo-global-excellence");
 await audit("404", "/scholarships/not-a-real-id");
 await audit("profile", "/profile");
 await audit("matches", "/matches");
+await audit("applications", "/applications");
 
 /* Filtered views must still be complete, not a client-only shell. */
 console.log("\n--- no-JS content ---");
@@ -223,6 +224,37 @@ check(
   "matches page does not claim a completion percentage before hydration",
   /profile is \d+% complete/i.test(matches),
   false,
+);
+
+/*
+ * The application-tracking route is a client island for the same reason the
+ * matches route is. Server HTML can only promise the heading, the provenance
+ * disclosure, and an honest statement that the stored records are being read.
+ */
+console.log("\n--- application tracking ---");
+const applications = await (await fetch(BASE + "/applications")).text();
+check("applications page has one h1", (applications.match(/<h1[^>]*>/g) ?? []).length, 1);
+check(
+  "applications page says it is reading the stored records",
+  /reading your saved applications/i.test(applications),
+  true,
+);
+check(
+  "applications page discloses where records are stored",
+  /this browser only/i.test(applications),
+  true,
+);
+check(
+  "applications page ships no tracking controls into the server HTML",
+  /<select/.test(applications),
+  false,
+  "status, note and removal controls are client-side and must only appear after hydration",
+);
+check(
+  "applications page does not leak a tracked record id",
+  /\/scholarships\/demo-/.test(applications),
+  false,
+  "tracked records are derived from localStorage and must only appear after hydration",
 );
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

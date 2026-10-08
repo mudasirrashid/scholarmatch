@@ -127,6 +127,9 @@ export function SiteHeader() {
               it is where a visitor's own answers would live once accounts
               arrive.
             */}
+            <Button href="/applications" variant="ghost" size="sm">
+              Applications
+            </Button>
             <Button href="/profile" variant="ghost" size="sm">
               My Profile
             </Button>
@@ -176,6 +179,9 @@ export function SiteHeader() {
             </ul>
 
             <div className="flex flex-col gap-2.5 pt-5 pb-2">
+              <Button href="/applications" variant="secondary" size="md">
+                Applications
+              </Button>
               <Button href="/profile" variant="secondary" size="md">
                 My Profile
               </Button>
