@@ -52,6 +52,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    {
+      // The companion. Its heading and disclosure are server rendered, but every
+      // answer depends on browser-local records a crawler does not have, so the
+      // shell is what is indexable and the priority stays low.
+      url: `${SITE_URL}/ai-assistant`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
     ...allScholarships().map((scholarship) => ({
       url: `${SITE_URL}/scholarships/${scholarship.id}`,
       // The dataset carries a real publication date per record, so crawlers see

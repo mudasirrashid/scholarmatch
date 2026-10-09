@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, Inbox, ListChecks } from "lucide-react";
+import { CalendarClock, Compass, Inbox, ListChecks } from "lucide-react";
 
 import { ApplicationStatusControl } from "@/components/applications/application-status-control";
 import { NextActionRow } from "@/components/applications/next-action-row";
@@ -180,6 +180,13 @@ export function ApplicationsView() {
               ) : null}
             </div>
           ) : null}
+
+          <div className="mt-7">
+            <Button href="/ai-assistant?from=applications" variant="secondary" size="sm">
+              <Compass className="size-4" aria-hidden="true" />
+              Ask the companion what to do next
+            </Button>
+          </div>
         </Container>
       </section>
 

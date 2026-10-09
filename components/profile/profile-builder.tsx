@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Compass } from "lucide-react";
 
 import {
   AcademicStep,
@@ -102,6 +103,13 @@ function ProfileBuilderInner() {
               )
             ) : null}
             <Badge tone="neutral">Saved in this browser only</Badge>
+          </div>
+
+          <div className="mt-7">
+            <Button href="/ai-assistant?from=profile" variant="secondary" size="sm">
+              <Compass className="size-4" aria-hidden="true" />
+              Ask the companion how to improve
+            </Button>
           </div>
         </Container>
       </section>

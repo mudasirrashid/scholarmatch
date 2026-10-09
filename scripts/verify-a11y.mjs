@@ -135,6 +135,7 @@ await audit("404", "/scholarships/not-a-real-id");
 await audit("profile", "/profile");
 await audit("matches", "/matches");
 await audit("applications", "/applications");
+const assistant = await audit("ai assistant", "/ai-assistant");
 
 /* Filtered views must still be complete, not a client-only shell. */
 console.log("\n--- no-JS content ---");
@@ -257,5 +258,32 @@ check(
   "tracked records are derived from localStorage and must only appear after hydration",
 );
 
-console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
-process.exit(failures === 0 ? 0 : 1);
+/*
+ * The companion is a client island for the same reason the other personalised
+ * routes are: every answer is derived from records in localStorage. What the
+ * server must still send is the heading, the honest disclosure that this is not
+ * an external model, a genuinely labelled question field, and the generic
+ * onboarding prompts — with none of the visitor's own records in the markup.
+ */
+console.log("\n--- ai scholarship companion ---");
+check("assistant page has one h1", (assistant.match(/<h1[^>]*>/g) ?? []).length, 1);
+check("assistant discloses it is not an external AI", /not an external AI/i.test(assistant), true);
+check("assistant says it is reading the stored profile", /reading your saved profile/i.test(assistant), true);
+check("assistant discloses where records are stored", /stored in this browser/i.test(assistant), true);
+check(
+  "assistant ships a labelled question field",
+  /for="assistant-question"/.test(assistant),
+  true,
+);
+check(
+  "assistant offers starter prompts before hydration",
+  assistant.includes("What can you help with?"),
+  true,
+);
+check(
+  "assistant does not leak a ranked or tracked record",
+  /\/scholarships\/demo-/.test(assistant),
+  false,
+);
+
+console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);process.exit(failures === 0 ? 0 : 1);

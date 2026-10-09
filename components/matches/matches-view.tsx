@@ -128,6 +128,13 @@ function MatchesViewInner() {
               ) : null}
             </div>
           ) : null}
+
+          <div className="mt-7">
+            <Button href="/ai-assistant?from=matches" variant="secondary" size="sm">
+              <Compass className="size-4" aria-hidden="true" />
+              Ask the companion about this ranking
+            </Button>
+          </div>
         </Container>
       </section>
 

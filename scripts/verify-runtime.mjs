@@ -347,11 +347,63 @@ check(
   false,
 );
 
+/*
+ * The companion is new in Phase 08. As with the other personalised routes, the
+ * server can promise only the shell: it resolves, carries complete metadata,
+ * states plainly that it is a guided reading rather than an external model,
+ * ships a genuinely labelled question field, and leaks none of the visitor's
+ * records. The conversation itself is client state, covered by the a11y audit.
+ */
+console.log("\n--- ai assistant route ---");
+const assistant = await get("/ai-assistant");
+check("ai assistant returns 200", assistant.status, 200);
+check(
+  "ai assistant has a canonical url",
+  assistant.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/ai-assistant"'),
+  true,
+);
+check("ai assistant has a meta description", /<meta name="description" content="[^"]{40,}"/.test(assistant.html), true);
+check(
+  "ai assistant discloses it is not an external model",
+  /not an external AI/i.test(assistant.html),
+  true,
+);
+check(
+  "ai assistant discloses browser-local storage",
+  /stored in this browser/i.test(assistant.html),
+  true,
+);
+check(
+  "ai assistant ships a labelled question field",
+  assistant.html.includes('for="assistant-question"'),
+  true,
+);
+check(
+  "ai assistant ships its starter prompts",
+  assistant.html.includes("What can you help with?"),
+  true,
+);
+check(
+  "ai assistant does not leak a ranked or tracked record",
+  /\/scholarships\/demo-/.test(assistant.html),
+  false,
+);
+check(
+  "ai assistant never names an external service",
+  /openai|anthropic|api key|llm/i.test(assistant.html),
+  false,
+);
+
 console.log("\n--- sitemap ---");
 const sitemapAgain = await get("/sitemap.xml");
 check(
   "sitemap lists the applications route",
   sitemapAgain.html.includes("<loc>https://www.scholarmatch.me/applications</loc>"),
+  true,
+);
+check(
+  "sitemap lists the assistant route",
+  sitemapAgain.html.includes("<loc>https://www.scholarmatch.me/ai-assistant</loc>"),
   true,
 );
 
@@ -364,6 +416,38 @@ check(
 check(
   "detail page header links to the applications dashboard",
   detail.html.includes('href="/applications"'),
+  true,
+);
+
+/*
+ * Phase 08 entry points: one contextual door from each surface that already
+ * holds the context making a question worthwhile. Every link is server-rendered,
+ * because each hero is, so they can all be checked from a response body.
+ */
+console.log("\n--- assistant entry points ---");
+check(
+  "detail hero links to the companion",
+  detail.html.includes('href="/ai-assistant?scholarship='),
+  true,
+);
+check(
+  "detail preparation section links to the companion",
+  /\/ai-assistant\?scholarship=[a-z0-9-]+[^"]*from=preparation/.test(detail.html),
+  true,
+);
+check(
+  "matches links to the companion",
+  matches.html.includes('href="/ai-assistant?from=matches"'),
+  true,
+);
+check(
+  "applications links to the companion",
+  applications.html.includes('href="/ai-assistant?from=applications"'),
+  true,
+);
+check(
+  "profile links to the companion",
+  profile.html.includes('href="/ai-assistant?from=profile"'),
   true,
 );
 

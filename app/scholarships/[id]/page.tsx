@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Info } from "lucide-react";
+import { ArrowLeft, Compass, ExternalLink, Info } from "lucide-react";
 
 import { EligibilityList } from "@/components/scholarships/detail/eligibility-list";
 import { MatchBreakdown } from "@/components/scholarships/detail/match-breakdown";
@@ -33,6 +33,7 @@ import { SaveButton } from "@/components/scholarships/save-button";
 import { SavedProvider } from "@/components/scholarships/saved-provider";
 import { AmbientField } from "@/components/ui/ambient-field";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/badge";
 import { activeDemoProfile } from "@/lib/demo/student-profiles";
@@ -227,6 +228,15 @@ export default async function ScholarshipDetailPage({
                     <ExternalLink className="size-4" aria-hidden="true" />
                   </a>
                 ) : null}
+
+                <Button
+                  href={`/ai-assistant?scholarship=${scholarship.id}&from=scholarship`}
+                  variant="secondary"
+                  size="md"
+                >
+                  <Compass className="size-4" aria-hidden="true" />
+                  Ask the companion
+                </Button>
               </div>
             </div>
 
@@ -403,6 +413,17 @@ export default async function ScholarshipDetailPage({
               />
 
               <ApplicationTrackingCard scholarship={scholarship} />
+
+              <p className="mt-6 text-sm leading-relaxed text-pretty text-mist-400">
+                Not sure which of this to do first?{" "}
+                <Link
+                  href={`/ai-assistant?scholarship=${scholarship.id}&from=preparation`}
+                  className="text-azure-300 underline-offset-4 transition-colors duration-200 hover:text-azure-200 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300"
+                >
+                  Ask the companion
+                </Link>{" "}
+                to read this record against your profile.
+              </p>
             </DetailSection>
 
             <DetailSection
