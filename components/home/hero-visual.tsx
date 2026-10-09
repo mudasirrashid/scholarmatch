@@ -211,7 +211,7 @@ export function HeroVisual() {
             tall the box ends up. Desktop restores the original placement.
           */}
         <p className="label-micro absolute inset-x-0 -bottom-16 text-center text-balance text-mist-600 lg:-bottom-6">
-          Interface preview — sample data
+          Illustrative sample data
         </p>
       </div>
     </ParallaxGroup>

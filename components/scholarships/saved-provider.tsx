@@ -21,6 +21,13 @@ const STORAGE_KEY = "scholarmatch:saved";
 interface SavedContextValue {
   /** Ids of saved opportunities. */
   saved: ReadonlySet<string>;
+  /**
+   * False while the stored set is still being read.
+   *
+   * Callers use this to avoid rendering an empty list on the first paint to
+   * someone who has saved opportunities.
+   */
+  isHydrated: boolean;
   isSaved: (id: string) => boolean;
   toggle: (id: string) => void;
   remove: (id: string) => void;
@@ -36,8 +43,14 @@ const EMPTY: ReadonlySet<string> = new Set<string>();
  * `getSnapshot` must return a referentially stable value for unchanged data or
  * React re-renders forever. The parsed set is therefore cached against the raw
  * stored string.
+ *
+ * The raw cache starts at a sentinel rather than `null`, so even the first read
+ * of an *empty* store yields a freshly allocated set: `isHydrated` is decided by
+ * comparing snapshots by identity, and the empty-set case must still count as
+ * "read".
  */
-let cachedRaw: string | null = null;
+const UNINITIALIZED = "__uninitialized";
+let cachedRaw: string | null = UNINITIALIZED;
 let cachedSnapshot: ReadonlySet<string> = EMPTY;
 
 function parse(raw: string | null): string[] {
@@ -138,6 +151,10 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<SavedContextValue>(
     () => ({
       saved,
+      // Identity comparison against the shared empty set. The server snapshot
+      // and the pre-read client snapshot are the same object, so this is false
+      // until the client has actually read storage — even when nothing is saved.
+      isHydrated: saved !== EMPTY,
       isSaved: (id: string) => saved.has(id),
       toggle,
       remove,

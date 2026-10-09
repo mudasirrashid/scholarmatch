@@ -1,7 +1,6 @@
 import { Bookmark, SearchX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
 import type { ExplorerQuery } from "@/types/scholarship";
 
 /** Neutral query used by both empty states to reset the view. */
@@ -74,14 +73,10 @@ export function NoResultsState({
 /**
  * Empty state for the saved view.
  *
- * Wired so a real account-backed list can be dropped in later without changing
- * the surrounding layout.
+ * Save happens on the explorer and detail pages, so the fallback points back
+ * at discovery and matching rather than implying anything went wrong.
  */
-export function NoSavedState({
-  onReset,
-}: {
-  onReset: () => void;
-}) {
+export function NoSavedState() {
   return (
     <div className="surface-glass edge-highlight relative overflow-hidden rounded-3xl px-6 py-20 text-center">
       <div
@@ -99,26 +94,17 @@ export function NoSavedState({
         </h2>
 
         <p className="mx-auto mt-3 max-w-sm text-pretty text-mist-400">
-          Your saved opportunities will appear here. Saved items are stored on this
-          device for now — an account will sync them across devices later.
+          Save any scholarship from its card or its page and it will appear here.
+          Saved items are stored in this browser only &mdash; there is no account
+          yet, so nothing syncs across devices.
         </p>
 
-        <Button href="/scholarships" className="mt-8">
-          Explore scholarships
-        </Button>
-
-        <button
-          type="button"
-          onClick={onReset}
-          className={cn(
-            "mt-5 block w-full text-sm text-mist-500",
-            "underline decoration-tint/15 underline-offset-4",
-            "transition-colors duration-200 hover:text-mist-300",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure-300",
-          )}
-        >
-          Reset demo saved items
-        </button>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button href="/scholarships">Explore scholarships</Button>
+          <Button href="/matches" variant="secondary">
+            See my matches
+          </Button>
+        </div>
       </div>
     </div>
   );

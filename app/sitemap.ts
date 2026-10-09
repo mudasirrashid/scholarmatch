@@ -53,6 +53,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
+      // The saved list. Its shell and explanation are server rendered, but the
+      // list itself depends on browser-local ids a crawler does not have, so a
+      // visit without JavaScript only ever sees the empty state, hence the low
+      // priority.
+      url: `${SITE_URL}/saved`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.4,
+    },
+    {
       // The companion. Its heading and disclosure are server rendered, but every
       // answer depends on browser-local records a crawler does not have, so the
       // shell is what is indexable and the priority stays low.

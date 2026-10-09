@@ -28,8 +28,8 @@ export function OpportunitiesShowcase() {
 
           <Reveal delay={200} className="shrink-0">
             <p className="max-w-xs text-sm leading-relaxed text-pretty text-mist-500">
-              Cards below are static previews &mdash; nothing is clickable while
-              the product is in preview.
+              Each card opens the full record &mdash; funding, eligibility,
+              required documents and deadlines.
             </p>
           </Reveal>
         </div>
@@ -43,6 +43,7 @@ export function OpportunitiesShowcase() {
             <ScholarshipCard
               key={scholarship.id}
               scholarship={scholarship}
+              href={`/scholarships/${scholarship.id}`}
               priority={index === 0}
               showSave={false}
             />

@@ -8,9 +8,9 @@ import { Container } from "@/components/ui/container";
 /**
  * Closing conversion section.
  *
- * Accounts do not exist yet, so the primary action resolves to a transparent
- * "not yet available" state rather than a dead link. The secondary action is
- * real: it leads to the scholarship explorer.
+ * There are no accounts yet, so the primary action answers the only question
+ * that matters: build the profile every personalised surface reads from. The
+ * secondary action leads to the scholarship explorer.
  */
 export function FinalCta() {
   return (
@@ -20,7 +20,7 @@ export function FinalCta() {
       <Container>
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <Reveal>
-            <p className="label-micro text-azure-300/90">Coming next</p>
+            <p className="label-micro text-azure-300/90">Start now</p>
           </Reveal>
 
           <Reveal delay={80}>
@@ -34,15 +34,15 @@ export function FinalCta() {
 
           <Reveal delay={160}>
             <p className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-pretty text-mist-400">
-              ScholarMatch is in active development. Create your profile once,
-              and we&rsquo;ll take it from there.
+              Answer your profile once, and every opportunity in the collection
+              gets scored against it &mdash; from first look to final submission.
             </p>
           </Reveal>
 
           <Reveal delay={240}>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button variant="primary" size="lg" disabled>
-                Start Your Journey
+              <Button href="/profile" variant="primary" size="lg">
+                Build Your Profile
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
 
@@ -58,8 +58,8 @@ export function FinalCta() {
               className="mt-6 text-sm text-mist-500"
               role="status"
             >
-              Accounts are not open yet. This page is a preview of the product in
-              progress.
+              There are no accounts yet &mdash; your profile and saved items are
+              stored only in this browser.
             </p>
           </Reveal>
         </div>

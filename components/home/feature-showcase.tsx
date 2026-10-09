@@ -18,9 +18,8 @@ const ICONS: Record<string, LucideIcon> = {
 /**
  * Product capability overview.
  *
- * Describes the intended product surface rather than shipped functionality, so
- * each block is written as a capability statement and framed by the section
- * copy as forthcoming.
+ * Each block is written as a capability statement for a surface that already
+ * exists, so the copy reads as a feature round-up rather than a roadmap.
  */
 export function FeatureShowcase({ features }: { features: readonly FeatureBlock[] }) {
   return (
@@ -29,7 +28,7 @@ export function FeatureShowcase({ features }: { features: readonly FeatureBlock[
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
           <div className="lg:sticky lg:top-32 lg:self-start">
             <Reveal>
-              <Eyebrow>What we&rsquo;re building</Eyebrow>
+              <Eyebrow>What you get</Eyebrow>
             </Reveal>
 
             <Reveal delay={80}>
@@ -43,9 +42,9 @@ export function FeatureShowcase({ features }: { features: readonly FeatureBlock[
 
             <Reveal delay={160}>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-pretty text-mist-400">
-                Discovery is only the first step. ScholarMatch is designed to
-                stay useful all the way through an application &mdash; from
-                first look to final submission.
+                Discovery is only the first step. ScholarMatch stays useful all
+                the way through an application &mdash; from first look to final
+                submission.
               </p>
             </Reveal>
           </div>

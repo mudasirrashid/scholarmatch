@@ -7,39 +7,38 @@ interface FooterColumn {
   title: string;
   items: readonly {
     label: string;
-    /**
-     * `undefined` means the destination does not exist yet in Phase 01 and is
-     * rendered as an inert, explicitly marked placeholder.
-     */
-    href?: string;
+    href: string;
   }[];
 }
 
+/*
+ * Every entry points at a route or homepage section that exists, so the footer
+ * has no dead or "coming soon" links. Marketing sections are addressed with
+ * `/#id` because the footer renders on every route, not only the homepage.
+ */
 const COLUMNS: readonly FooterColumn[] = [
   {
     title: "Product",
     items: [
-      { label: "Discover Scholarships", href: "#discover" },
-      { label: "How It Works", href: "#how-it-works" },
-      { label: "Matching", href: "#matching" },
-      { label: "Application Journey", href: "#journey" },
+      { label: "Discover Scholarships", href: "/scholarships" },
+      { label: "Your Matches", href: "/matches" },
+      { label: "Applications", href: "/applications" },
+      { label: "Saved", href: "/saved" },
+      { label: "AI Companion", href: "/ai-assistant" },
     ],
   },
   {
-    title: "Resources",
+    title: "Explore",
     items: [
-      { label: "Guides" },
-      { label: "Application Help" },
-      { label: "Eligibility Glossary" },
+      { label: "How It Works", href: "/#how-it-works" },
+      { label: "Inside a Match", href: "/#matching" },
+      { label: "Application Journey", href: "/#journey" },
+      { label: "Why ScholarMatch", href: "/#philosophy" },
     ],
   },
   {
-    title: "Company",
-    items: [{ label: "About", href: "#philosophy" }, { label: "Contact" }],
-  },
-  {
-    title: "Legal",
-    items: [{ label: "Privacy" }, { label: "Terms" }],
+    title: "Get Started",
+    items: [{ label: "Build Your Profile", href: "/profile" }],
   },
 ];
 
@@ -65,12 +64,12 @@ export function SiteFooter() {
               </p>
 
               <p className="label-micro mt-8 text-mist-600">
-                Product preview — Phase 01
+                No account needed — your data stays in your browser.
               </p>
             </div>
 
             {/* Navigation */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">
               {COLUMNS.map((column) => (
                 <nav key={column.title} aria-label={column.title}>
                   <h2 className="label-micro text-mist-500">{column.title}</h2>
@@ -78,29 +77,12 @@ export function SiteFooter() {
                   <ul className="mt-5 space-y-3">
                     {column.items.map((item) => (
                       <li key={item.label}>
-                        {item.href ? (
-                          <Link
-                            href={item.href}
-                            className="text-sm text-mist-400 transition-colors duration-200 hover:text-mist-50"
-                          >
-                            {item.label}
-                          </Link>
-                        ) : (
-                          // No destination exists yet. Rendered as inert text
-                          // and labelled for assistive technology rather than
-                          // linking somewhere that would not work.
-                          <span
-                            aria-disabled="true"
-                            title="Not available yet"
-                            className="inline-flex cursor-not-allowed items-center gap-2 text-sm text-mist-600"
-                          >
-                            {item.label}
-                            <span className="rounded-full border border-hairline px-1.5 py-0.5 font-mono text-[0.5625rem] tracking-[0.12em] text-mist-600 uppercase">
-                              Soon
-                            </span>
-                            <span className="sr-only">— coming soon</span>
-                          </span>
-                        )}
+                        <Link
+                          href={item.href}
+                          className="text-sm text-mist-400 transition-colors duration-200 hover:text-mist-50"
+                        >
+                          {item.label}
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -117,9 +99,9 @@ export function SiteFooter() {
             </p>
 
             <p className="max-w-md text-xs leading-relaxed text-mist-600">
-              Preview build. Sample records are illustrative; sourced records are
-              transcribed from official provider pages. Always confirm requirements
-              with the awarding body.
+              Sample records are illustrative; sourced records are transcribed
+              from official provider pages. Always confirm requirements with the
+              awarding body.
             </p>
           </div>
         </div>

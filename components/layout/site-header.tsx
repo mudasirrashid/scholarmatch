@@ -2,7 +2,6 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Brand } from "@/components/layout/brand";
@@ -14,34 +13,29 @@ import { useScrolled } from "@/lib/motion";
 
 interface NavItem {
   label: string;
-  /** Homepage section id, resolved to a full path when not on the homepage. */
+  /** Absolute product route, valid from any page. */
   href: string;
 }
 
+/*
+ * The nav lists the product's actual surfaces, so every destination is one
+ * click away from any page. The marketing story (how it works, matching,
+ * journey) stays reachable from the homepage sections the footer links to.
+ */
 const NAV_ITEMS: readonly NavItem[] = [
-  { label: "Discover", href: "#discover" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Matching", href: "#matching" },
-  { label: "Journey", href: "#journey" },
-  { label: "About", href: "#philosophy" },
+  { label: "Discover", href: "/scholarships" },
+  { label: "Matches", href: "/matches" },
+  { label: "Applications", href: "/applications" },
+  { label: "Saved", href: "/saved" },
+  { label: "Companion", href: "/ai-assistant" },
 ];
+
+/* The one conversion action: start the profile that personalises everything. */
+const PRIMARY_HREF = "/profile";
 
 export function SiteHeader() {
   const scrolled = useScrolled(16);
   const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-  /*
-   * The nav points at homepage sections. On any other route a bare `#id` would
-   * resolve against the current page and land nowhere, so the section links are
-   * rewritten to `/#id`. Rendered on the server from the pathname rather than
-   * after hydration, so the correct link is in the initial HTML.
-   */
-  const onHomepage = pathname === "/";
-  const navHref = (href: string) => (onHomepage ? href : `/${href}`);
-
-  /* Conversion actions point at the explorer now that it exists. */
-  const primaryHref = onHomepage ? "#final-cta" : "/scholarships";
 
   // Close the mobile sheet when the viewport grows past the breakpoint,
   // otherwise it stays mounted and traps focus behind the header.
@@ -106,7 +100,7 @@ export function SiteHeader() {
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
-                    href={navHref(item.href)}
+                    href={item.href}
                     className="relative inline-flex h-9 items-center rounded-full px-3.5 text-sm text-mist-400 transition-colors duration-200 hover:text-mist-50"
                   >
                     {item.label}
@@ -119,23 +113,11 @@ export function SiteHeader() {
           <div className="hidden items-center gap-2.5 lg:flex">
             <ThemeToggle />
             {/*
-              Authentication does not exist yet, so "Sign In" still targets the
-              conversion section. "Get Started" points at the explorer on routes
-              that have no conversion section of their own.
+              There is no authentication yet, so the single conversion action
+              targets the profile builder: it is where a visitor's own answers
+              live, and what every personalised surface reads from.
             */}
-            {/*
-              Authentication does not exist yet, so this targets the profile
-              builder: it is the closest thing to a personalised entry point, and
-              it is where a visitor's own answers would live once accounts
-              arrive.
-            */}
-            <Button href="/applications" variant="ghost" size="sm">
-              Applications
-            </Button>
-            <Button href="/profile" variant="ghost" size="sm">
-              My Profile
-            </Button>
-            <Button href={primaryHref} variant="secondary" size="sm">
+            <Button href={PRIMARY_HREF} variant="primary" size="sm">
               Get Started
             </Button>
           </div>
@@ -170,7 +152,7 @@ export function SiteHeader() {
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
-                    href={navHref(item.href)}
+                    href={item.href}
                     onClick={() => setMenuOpen(false)}
                     className="block border-b border-hairline-soft py-3.5 text-base text-mist-200 transition-colors duration-200 hover:text-mist-50"
                   >
@@ -185,13 +167,7 @@ export function SiteHeader() {
                 <span className="label-micro text-mist-500">Appearance</span>
                 <ThemeToggle />
               </div>
-              <Button href="/applications" variant="secondary" size="md">
-                Applications
-              </Button>
-              <Button href="/profile" variant="secondary" size="md">
-                My Profile
-              </Button>
-              <Button href={primaryHref} variant="primary" size="md">
+              <Button href={PRIMARY_HREF} variant="primary" size="md">
                 Get Started
               </Button>
             </div>

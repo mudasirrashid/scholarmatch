@@ -135,6 +135,7 @@ await audit("404", "/scholarships/not-a-real-id");
 await audit("profile", "/profile");
 await audit("matches", "/matches");
 await audit("applications", "/applications");
+await audit("saved", "/saved");
 const assistant = await audit("ai assistant", "/ai-assistant");
 
 /* Filtered views must still be complete, not a client-only shell. */
@@ -256,6 +257,31 @@ check(
   /\/scholarships\/demo-/.test(applications),
   false,
   "tracked records are derived from localStorage and must only appear after hydration",
+);
+
+/*
+ * The saved list is a client island for the same reason the other stash routes
+ * are: the saved set lives in localStorage. Server HTML can only promise the
+ * heading, a browser-local disclosure, and an honest statement that the stored
+ * ids are being read — with none of the visitor's saved records in the markup.
+ */
+console.log("\n--- saved ---");
+const saved = await (await fetch(BASE + "/saved")).text();
+check("saved page has one h1", (saved.match(/<h1[^>]*>/g) ?? []).length, 1);
+check(
+  "saved page says it is reading the stored records",
+  /reading your saved scholarships/i.test(saved),
+  true,
+);
+check(
+  "saved page discloses where records are stored",
+  /this browser only/i.test(saved),
+  true,
+);
+check(
+  "saved page does not leak a saved record id",
+  /\/scholarships\/demo-/.test(saved),
+  false,
 );
 
 /*

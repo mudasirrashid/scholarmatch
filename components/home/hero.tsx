@@ -1,4 +1,4 @@
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight, UserRound } from "lucide-react";
 
 import { HeroVisual } from "@/components/home/hero-visual";
 import { Reveal } from "@/components/motion/reveal";
@@ -21,7 +21,7 @@ export function Hero() {
                   <span className="absolute inset-0 rounded-full bg-azure-400/25 animate-pulse-ring" />
                   <span className="relative size-1.5 rounded-full bg-azure-300" />
                 </span>
-                Now in preview
+                Free &middot; no account needed
               </p>
             </Reveal>
 
@@ -44,7 +44,7 @@ export function Hero() {
 
             <Reveal delay={260}>
               <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button href="#final-cta" variant="primary" size="lg">
+                <Button href="/scholarships" variant="primary" size="lg">
                   Find My Scholarships
                   <ArrowRight
                     className="size-4 transition-transform duration-300 ease-out group-hover/btn:translate-x-0.5"
@@ -52,18 +52,17 @@ export function Hero() {
                   />
                 </Button>
 
-                <Button href="#discover" variant="secondary" size="lg">
-                  <Compass className="size-4 text-mist-400" aria-hidden="true" />
-                  Explore Scholarships
+                <Button href="/profile" variant="secondary" size="lg">
+                  <UserRound className="size-4 text-mist-400" aria-hidden="true" />
+                  Build Your Profile
                 </Button>
               </div>
             </Reveal>
 
             <Reveal delay={340}>
               <p className="mt-8 max-w-md text-xs leading-relaxed text-mist-500">
-                ScholarMatch is still being built. Nothing on this page is a live
-                search &mdash; the interface below previews where we&rsquo;re
-                heading.
+                There are no accounts yet: your profile, saved scholarships and
+                tracked applications are stored in this browser only.
               </p>
             </Reveal>
           </div>

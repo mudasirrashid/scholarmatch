@@ -24,9 +24,12 @@ async function get(path) {
 
 /** Ids present in the server HTML, in document order and de-duplicated. */
 function resultIds(html) {
-  return [...new Set(html.match(/\/scholarships\/([a-z0-9-]+)/g) ?? [])].map((href) =>
-    href.split("/").pop(),
-  );
+  return [
+    ...new Set(
+      (html.match(/\/scholarships\/(demo-[a-z0-9-]+|commonwealth-masters|jj-wbgsp|turkiye-burslari|icdf-scholarship|daad-epos|erasmus-mundus-jm|swiss-excellence|nl-scholarship)(?=["?/\s>]|$)/g) ??
+        []).map((href) => href.split("/").pop()),
+    ),
+  ];
 }
 
 const all = await get("/scholarships");
@@ -178,15 +181,35 @@ check("test-free record reports no test required", detail.html.includes("No lang
 const missingDetail = await get("/scholarships/does-not-exist");
 check("unknown detail id returns 404", missingDetail.status, 404);
 
-/* Header section anchors must resolve to the homepage away from the homepage. */
+/* Every main product surface is one header click away from any page. */
 check(
-  "header rewrites section anchors off the homepage",
-  detail.html.includes('href="/#discover"'),
+  "header exposes the explorer off the homepage",
+  detail.html.includes('href="/scholarships"'),
   true,
 );
 check(
-  "header points conversion action at the explorer off the homepage",
-  detail.html.includes('href="/scholarships"'),
+  "header exposes the personalised matches off the homepage",
+  detail.html.includes('href="/matches"'),
+  true,
+);
+check(
+  "header exposes the application tracker off the homepage",
+  detail.html.includes('href="/applications"'),
+  true,
+);
+check(
+  "header exposes saved opportunities off the homepage",
+  detail.html.includes('href="/saved"'),
+  true,
+);
+check(
+  "header exposes the companion off the homepage",
+  detail.html.includes('href="/ai-assistant"'),
+  true,
+);
+check(
+  "header conversion action targets the profile builder",
+  detail.html.includes('href="/profile"'),
   true,
 );
 
@@ -348,6 +371,33 @@ check(
 );
 
 /*
+ * The saved route is a client island for the same reason the other stash
+ * routes are: the saved set lives in localStorage. The server can promise the
+ * shell: it resolves, is in the sitemap, carries complete metadata, discloses
+ * browser-local storage, and leaks none of the visitor's saved ids. The list
+ * itself is client state, covered by the a11y audit.
+ */
+console.log("\n--- saved route ---");
+const saved = await get("/saved");
+check("saved returns 200", saved.status, 200);
+check(
+  "saved has a canonical url",
+  saved.html.includes('<link rel="canonical" href="https://www.scholarmatch.me/saved"'),
+  true,
+);
+check("saved has a meta description", /<meta name="description" content="[^"]{40,}"/.test(saved.html), true);
+check(
+  "saved discloses that storage is browser-local",
+  /this browser only/i.test(saved.html),
+  true,
+);
+check(
+  "saved does not leak a saved record id into server HTML",
+  /\/scholarships\/demo-/.test(saved.html),
+  false,
+);
+
+/*
  * The companion is new in Phase 08. As with the other personalised routes, the
  * server can promise only the shell: it resolves, carries complete metadata,
  * states plainly that it is a guided reading rather than an external model,
@@ -402,22 +452,22 @@ check(
   true,
 );
 check(
+  "sitemap lists the saved route",
+  sitemapAgain.html.includes("<loc>https://www.scholarmatch.me/saved</loc>"),
+  true,
+);
+check(
   "sitemap lists the assistant route",
   sitemapAgain.html.includes("<loc>https://www.scholarmatch.me/ai-assistant</loc>"),
   true,
 );
 
-/* Every page carries the applications entry point in the header. */
-check(
-  "header links to the applications dashboard",
-  home.html.includes('href="/applications"'),
-  true,
-);
-check(
-  "detail page header links to the applications dashboard",
-  detail.html.includes('href="/applications"'),
-  true,
-);
+/* Every production surface is one header click away from any page. */
+const HEADER_TARGETS = ["/scholarships", "/matches", "/applications", "/saved", "/ai-assistant", "/profile"];
+for (const target of HEADER_TARGETS) {
+  check(`homepage header links to ${target}`, home.html.includes(`href="${target}"`), true);
+  check(`detail page header links to ${target}`, detail.html.includes(`href="${target}"`), true);
+}
 
 /*
  * Phase 08 entry points: one contextual door from each surface that already
