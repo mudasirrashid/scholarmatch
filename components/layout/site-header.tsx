@@ -1,10 +1,10 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Brand } from "@/components/layout/brand";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -91,7 +91,29 @@ export function SiteHeader() {
             className="rounded-md"
             aria-label="ScholarMatch home"
           >
-            <Brand idPrefix="header" />
+            {/*
+              The wordmark's "Scholar" is inked for the surface it sits on, so
+              both lockups ship and the active theme reveals the matching one
+              (see `.brand-logo-*` in app/globals.css). Both are marked
+              `priority`: the header is above the fold and the swap on theme
+              change must be instant.
+            */}
+            <Image
+              src="/scholarmatch-logo.png"
+              alt="ScholarMatch"
+              width={524}
+              height={112}
+              priority
+              className="brand-logo-dark h-8 w-auto"
+            />
+            <Image
+              src="/scholarmatch-logo-light.png"
+              alt="ScholarMatch"
+              width={524}
+              height={112}
+              priority
+              className="brand-logo-light h-8 w-auto"
+            />
           </Link>
 
           {/* Desktop navigation */}
