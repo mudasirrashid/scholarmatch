@@ -35,22 +35,56 @@ export function HeroVisual() {
               <stop offset="45%" stopColor="#38bdf8" stopOpacity="0.55" />
               <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
             </linearGradient>
+            <marker
+              id="hero-arrow"
+              markerWidth="6"
+              markerHeight="6"
+              refX="5"
+              refY="3"
+              orient="auto"
+            >
+              <path d="M0,0 L6,3 L0,6 L1,3 z" fill="#38bdf8" fillOpacity="0.65" />
+            </marker>
           </defs>
 
+          {/* Connector 1: Profile card -> Scholarship card (top connection) */}
           <path
-            d="M128 214 C 210 214, 214 300, 300 300"
+            d="M 248 140 C 270 140, 240 180, 218 200"
             stroke="url(#hero-link)"
             strokeWidth="1.25"
             strokeDasharray="5 7"
             className="animate-dash-flow"
+            markerEnd="url(#hero-arrow)"
           />
+          {/* Connector 2: Profile card -> Scholarship card (bottom connection) */}
           <path
-            d="M120 336 C 208 336, 226 316, 300 312"
+            d="M 248 180 C 270 180, 240 220, 218 240"
             stroke="url(#hero-link)"
             strokeWidth="1.25"
             strokeDasharray="5 7"
             className="animate-dash-flow"
             style={{ animationDelay: "-1.4s" }}
+            markerEnd="url(#hero-arrow)"
+          />
+          {/* Connector 3: Scholarship card -> 3 new matches pill (top-right) */}
+          <path
+            d="M 500 140 C 510 120, 515 90, 520 60"
+            stroke="url(#hero-link)"
+            strokeWidth="1.25"
+            strokeDasharray="5 7"
+            className="animate-dash-flow"
+            style={{ animationDelay: "-2.8s" }}
+            markerEnd="url(#hero-arrow)"
+          />
+          {/* Connector 4: Profile card -> Eligibility verified badge (bottom-left) */}
+          <path
+            d="M 140 240 C 120 280, 90 360, 60 420"
+            stroke="url(#hero-link)"
+            strokeWidth="1.25"
+            strokeDasharray="5 7"
+            className="animate-dash-flow"
+            style={{ animationDelay: "-4.2s" }}
+            markerEnd="url(#hero-arrow)"
           />
         </svg>
 
