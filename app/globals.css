@@ -262,6 +262,24 @@ html[data-theme="light"] .surface-glass-strong {
   );
 }
 
+/* Header brand lockup --------------------------------------------------------
+   The wordmark's "Scholar" is inked for the surface it sits on, so the header
+   ships both the dark- and light-surface lockups and reveals the one matching
+   the active theme. `data-theme` is applied to <html> before first paint, so
+   the swap never flashes; the hidden variant is `display: none`, which also
+   keeps it out of the accessibility tree. */
+.brand-logo-light {
+  display: none;
+}
+
+html[data-theme="light"] .brand-logo-dark {
+  display: none;
+}
+
+html[data-theme="light"] .brand-logo-light {
+  display: block;
+}
+
 /* Theme switch crossfade.
    The toggle wraps the `data-theme` flip in a same-document view transition
    (lib/theme.ts), so the page dissolves from one theme to the other instead of
